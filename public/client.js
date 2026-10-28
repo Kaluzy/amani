@@ -50,7 +50,7 @@ async function render() {
   }
   const activePath = currentPath.startsWith('/topics/') ? '/topics' : currentPath.startsWith('/repositories/') ? '/github-trending' : currentPath;
   for (const link of document.querySelectorAll('#mainNav a')) {
-    const active = link.getAttribute('href') === activePath;
+    const active = routeURL(link.href).pathname === activePath;
     link.classList.toggle('active', active);
     active ? link.setAttribute('aria-current', 'page') : link.removeAttribute('aria-current');
   }

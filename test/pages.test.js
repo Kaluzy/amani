@@ -51,5 +51,10 @@ test('GitHub Pages export works without a backend under its project base path',{
   await page.goto(origin+'/amani/',{waitUntil:'networkidle0'});
   await page.type('#globalSearch','pages');await page.$eval('#searchForm',form=>form.requestSubmit());await page.waitForSelector('#sortSelect');
   assert.match(page.url(),/\/amani\/github-trending\?q=pages/);
+  await page.waitForSelector('#mainNav a.active[href="/amani/github-trending"]');
+  await page.click('#mainNav a[href="/amani/weekly"]');
+  await page.waitForSelector('#mainNav a.active[href="/amani/weekly"]');
+  await page.waitForSelector('.repo-card');
+  assert.equal(await page.$eval('#mainNav a.active',el=>el.getAttribute('aria-current')),'page');
   assert.deepEqual(errors,[]);assert.deepEqual(bad,[]);
 });
