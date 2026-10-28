@@ -1,0 +1,31 @@
+{
+  "name": "trendshift-superpowers",
+  "version": "3.0.0",
+  "description": "Live trending GitHub repository tracker - full trendshift.io clone",
+  "type": "module",
+  "scripts": {
+    "build:pages": "node scripts/build-pages.js",
+    "fetch": "node scripts/fetch-trending.js",
+    "rank": "node scripts/rank-momentum.js",
+    "stats": "node scripts/compute-stats.js",
+    "serve": "node scripts/serve-api.js",
+    "scrape": "node scripts/scrape-trending.js",
+    "refresh": "npm run scrape -- all",
+    "full": "npm run refresh && npm run serve",
+    "test": "node --test test/*.test.js",
+    "qa": "node scripts/qa-check.js",
+    "qa:full": "node scripts/qa-check.js --full"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "chart.js": "^4.4.3",
+    "cheerio": "^1.0.0",
+    "date-fns": "^3.6.0",
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^25.16.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.5"
+  }
+}

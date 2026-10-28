@@ -1,0 +1,63 @@
+name: Publish Amani
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '23 * * * *'
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TRENDSHIFT_DB_PATH: ${{ github.workspace }}/.trendshift/pages.db
+      PAGES_BASE: /amani
+      PAGES_REPOSITORY: Kaluzy/amani
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: .trendshift/pages.db
+          key: pages-data-${{ github.run_id }}
+          restore-keys: pages-data-
+      - run: node scripts/pages-seed.js import
+        env:
+          PAGES_SEED_URL: https://kaluzy.github.io/amani/data/public-seed.json
+      - name: Collect fresh public data
+        run: npm run refresh
+      - name: Build static pages and public data
+        run: |
+          node scripts/pages-seed.js export
+          npm run build:pages
+      - uses: actions/cache/save@v4
+        with:
+          path: .trendshift/pages.db
+          key: pages-data-${{ github.run_id }}
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy public website
+        id: deployment
+        uses: actions/deploy-pages@v4

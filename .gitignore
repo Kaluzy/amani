@@ -1,0 +1,14 @@
+node_modules/
+.trendshift/
+.backups/
+dist/
+*.db
+*.sqlite
+*.db-shm
+*.db-wal
+.env
+.env.*
+!.env.example
+COORDINATION.md
+AGENTS.md
+deploy/

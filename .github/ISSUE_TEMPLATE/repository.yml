@@ -1,0 +1,16 @@
+name: Suggest a repository
+description: Suggest a public GitHub repository for Amani.
+title: 'Repository suggestion: '
+body:
+  - type: input
+    id: repository
+    attributes:
+      label: Public GitHub repository URL
+      placeholder: https://github.com/owner/repository
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: Why is it worth exploring?
+      description: Do not include credentials or private information.

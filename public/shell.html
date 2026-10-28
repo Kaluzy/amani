@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f4">
+  <meta name="description" content="Explore open-source repositories with real GitHub Trending collections, recorded growth, language statistics, and topics.">
+  <title>Amani — Open-source intelligence</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/design.css?v=3">
+  <link rel="stylesheet" href="/cards.css?v=3.4">
+  <script src="/vendor/chart.js" defer></script>
+  <script type="module" src="/client.js?v=3"></script>
+</head>
+<body>
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <div class="app-layout">
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <a class="brand" href="/" data-nav><span class="brand-mark" aria-hidden="true">a<span>↗</span></span><span>amani<span class="brand-caption">OPEN-SOURCE INTELLIGENCE</span></span></a>
+      <p class="nav-label">WORKSPACE</p>
+      <nav id="mainNav" aria-label="Explore repositories"></nav>
+      <div class="sidebar-bottom"><div class="workspace-status"><span class="status-dot"></span><div>Built on real observations<span id="sidebarCount">Connecting to your collection…</span></div></div><a href="/about" data-nav class="sidebar-about">About the data <span aria-hidden="true">↗</span></a></div>
+    </aside>
+    <button class="nav-backdrop" id="navBackdrop" aria-label="Close navigation" hidden></button>
+    <div class="workspace">
+      <header class="topbar">
+        <button class="icon-button mobile-menu" id="menuToggle" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>Workspace</span><span aria-hidden="true">/</span><strong id="breadcrumb">Overview</strong></div>
+        <form class="global-search" id="searchForm" role="search"><label class="sr-only" for="globalSearch">Search all repositories</label><span aria-hidden="true">⌕</span><input id="globalSearch" type="search" name="q" placeholder="Find a repository…" autocomplete="off"><kbd>/</kbd></form>
+        <a class="button button-dark topbar-submit" href="/submit" data-nav><span aria-hidden="true">＋</span> Submit repository</a>
+      </header>
+      <main id="mainContent" class="main-content" tabindex="-1"><div class="page-loading" role="status">Loading your workspace…</div></main>
+      <footer class="site-footer"><span>Amani <span class="footer-dot">·</span> A clearer view of open source.</span><nav aria-label="Footer"><a href="/about" data-nav>Data sources</a><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a><a href="/contact" data-nav>Contact</a></nav></footer>
+    </div>
+  </div>
+  <div id="announcements" class="sr-only" role="status" aria-live="polite"></div>
+  <noscript><p class="notice">JavaScript is needed to browse this repository workspace.</p></noscript>
+</body>
+</html>
