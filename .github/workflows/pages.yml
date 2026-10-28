@@ -26,6 +26,12 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Install Chromium for release checks
+        if: github.event_name != 'schedule'
+        run: npx puppeteer browsers install chrome
+      - name: Verify source changes before publishing
+        if: github.event_name != 'schedule'
+        run: npm test
       - uses: actions/cache/restore@v4
         with:
           path: .trendshift/pages.db
