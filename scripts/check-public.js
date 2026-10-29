@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
+import { checkedFetch } from './http-check.js';
 
 export async function checkPublic(baseURL = 'https://kaluzy.github.io/amani/', { expectedCommit = process.env.EXPECTED_COMMIT } = {}) {
   const base = new URL(baseURL.endsWith('/') ? baseURL : baseURL + '/');
-  const checks = [];
+  const checks = [], transientRetries = [];
   const get = async (file, json = true) => {
     const url = new URL(file, base);
-    const response = await fetch(url, { signal: AbortSignal.timeout(15000), cache: 'no-store' });
+    const response = await checkedFetch(url, { onRetry: retry => transientRetries.push(retry) });
     assert.ok(response.ok, `${url}: HTTP ${response.status}`);
     checks.push(url.href);
     return json ? response.json() : response.text();
@@ -33,7 +34,7 @@ export async function checkPublic(baseURL = 'https://kaluzy.github.io/amani/', {
     const html = await get(file, false); assert.match(html, /id="mainContent"/); assert.match(html, /Content-Security-Policy/);
   }
   assert.match(await get('sitemap.xml', false), /<urlset/);
-  console.log(JSON.stringify({ result: 'pass', checks: checks.length, build, checkedAt: new Date().toISOString() }, null, 2));
-  return { checks, build };
+  console.log(JSON.stringify({ result: 'pass', checks: checks.length, transientRetries, build, checkedAt: new Date().toISOString() }, null, 2));
+  return { checks, build, transientRetries };
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) checkPublic(process.env.AMANI_PUBLIC_URL).catch(error => { console.error(error.message); process.exitCode = 1; });

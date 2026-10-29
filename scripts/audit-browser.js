@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import puppeteer from 'puppeteer';
+import { checkedFetch } from './http-check.js';
 
 const base = (process.env.AMANI_PUBLIC_URL || 'https://kaluzy.github.io/amani/').replace(/\/?$/, '/');
 const output = path.resolve(process.env.AMANI_BROWSER_EVIDENCE || '.amani/browser-evidence');
@@ -12,7 +13,7 @@ const featured = repos.find(repo => repo.full_name === 'obra/superpowers') || re
 const profile = 'repositories/' + featured.full_name + '/';
 const routes = ['', 'daily/','weekly/','monthly/','yearly/','stats/','insights/','live/','topics/','github-trending/','workbench/','guide/','submit/','about/','privacy/','terms/','contact/',profile,'topics/'+encodeURIComponent(topics[0].slug)+'/'];
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
-const errors = [], failed = [], links = new Set(); let combinations = 0;
+const errors = [], failed = [], transientRetries = [], links = new Set(); let combinations = 0;
 try {
   const page = await browser.newPage();
   page.on('pageerror', error => errors.push(error.message));
@@ -59,8 +60,12 @@ try {
   await page.waitForFunction(() => document.getElementById('sidebar').classList.contains('open') && Math.abs(document.getElementById('sidebar').getBoundingClientRect().left) < 1);
   await page.locator('#mainNav a[href$="/guide"]').click(); await page.waitForSelector('.field-guide');
   assert.equal(await page.$eval('#menuToggle', element=>element.getAttribute('aria-expanded')),'false');
-  for (const link of links) { const response = await fetch(link, { signal: AbortSignal.timeout(20000) }); assert.ok(response.ok, `Public link ${link}: ${response.status}`); }
+  for (const link of links) {
+    const response = await checkedFetch(link, { onRetry: retry => transientRetries.push(retry) });
+    assert.ok(response.ok, `Public link ${link}: ${response.status}`);
+    await response.arrayBuffer();
+  }
   assert.deepEqual(errors, []); assert.deepEqual(failed, []);
-  const report = { checkedAt: new Date().toISOString(), result: 'pass', routeViewportCombinations: combinations, uniqueInternalLinks: links.size, comparisonWidths: 4, browser: 'Chromium', base };
+  const report = { checkedAt: new Date().toISOString(), result: 'pass', routeViewportCombinations: combinations, uniqueInternalLinks: links.size, comparisonWidths: 4, transientRetries, browser: 'Chromium', base };
   await writeFile(path.join(output, 'report.json'), JSON.stringify(report,null,2)); console.log(JSON.stringify(report,null,2));
 } finally { await browser.close(); }
