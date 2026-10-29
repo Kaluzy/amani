@@ -6,7 +6,7 @@ import { chartData } from '../src/lib/chart-data.js';
 import { listRepos, normalize, trustedHistory, coverage, periods } from '../src/lib/catalog.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const version = '3.0.0';
+const version = '3.1.0';
 export function createApp() {
   const app = express();
   app.disable('x-powered-by');
@@ -22,11 +22,16 @@ export function createApp() {
     totalForks: db.prepare('SELECT COALESCE(SUM(forks_count),0) n FROM repos').get().n,
     totalLanguages: db.prepare("SELECT COUNT(DISTINCT language) n FROM repos WHERE language IS NOT NULL AND language != ''").get().n,
   });
-  const languages = () => db.prepare(`SELECT language, COUNT(*) repos,
-    SUM(CASE WHEN stargazers_count > 0 THEN stargazers_count END) totalStars,
-    SUM(CASE WHEN stargazers_count > 0 THEN forks_count END) totalForks,
-    CAST(AVG(CASE WHEN stargazers_count > 0 THEN stargazers_count END) AS INTEGER) avgStars
-    FROM repos WHERE language IS NOT NULL AND language != '' GROUP BY language ORDER BY repos DESC, language`).all();
+  const languages = () => {
+    const groups = new Map();
+    for (const repo of listRepos('all')) {
+      if (!repo.language) continue;
+      if (!groups.has(repo.language)) groups.set(repo.language, {language:repo.language,repos:0,totalStars:null,totalForks:null,avgStars:null,known:0});
+      const row = groups.get(repo.language); row.repos++;
+      if (repo.stargazers_count != null) { row.known++; row.totalStars=(row.totalStars??0)+repo.stargazers_count; row.totalForks=(row.totalForks??0)+repo.forks_count; }
+    }
+    return [...groups.values()].map(({known,...row}) => ({...row,avgStars:known?Math.floor(row.totalStars/known):null})).sort((a,b)=>b.repos-a.repos||a.language.localeCompare(b.language));
+  };
   const charts = () => ({ monthlyStars: chartData('month', 'stars'), monthlyForks: chartData('month', 'forks'), yearlyStars: chartData('year', 'stars'), yearlyForks: chartData('year', 'forks') });
   app.get('/health', (req, res) => res.json({ status: 'ok', version, data: metrics(), timestamp: new Date().toISOString() }));
   app.get('/api/status', (req, res) => res.json({ version, metrics: metrics(), periods: coverage(), collected_at: new Date().toISOString() }));
@@ -54,7 +59,7 @@ export function createApp() {
       const query = String(req.query.q).toLowerCase();
       items = items.filter(repo => `${repo.full_name} ${repo.description || ''} ${repo.topics.join(' ')}`.toLowerCase().includes(query));
     }
-    const limit = Math.min(1000, Math.max(1, Number.parseInt(req.query.limit || '1000', 10) || 1000));
+    const limit = req.query.limit == null ? items.length : Math.min(1000, Math.max(1, Number.parseInt(req.query.limit, 10) || 1000));
     return items.slice(0, limit);
   };
   app.get('/api/repos', (req, res) => {
@@ -109,7 +114,7 @@ export function createApp() {
   aliases['/repo.html'] = '/github-trending';
   aliases['/topic.html'] = '/topics';
   app.get(Object.keys(aliases), (req, res) => res.redirect(302, aliases[req.path]));
-  const routes = ['/', '/daily', '/weekly', '/monthly', '/yearly', '/stats', '/insights', '/live', '/topics', '/topics/:slug', '/github-trending', '/repositories/:owner/:repo', '/submit', '/about', '/privacy', '/terms', '/contact'];
+  const routes = ['/', '/daily', '/weekly', '/monthly', '/yearly', '/stats', '/insights', '/live', '/topics', '/topics/:slug', '/github-trending', '/repositories/:owner/:repo', '/workbench', '/guide', '/submit', '/about', '/privacy', '/terms', '/contact'];
   app.get(routes, (req, res) => { res.set('Cache-Control', 'no-cache'); res.sendFile(path.join(root, 'public/shell.html')); });
   app.use(express.static(path.join(root, 'public'), { index: false, maxAge: 0 }));
   app.use((req, res) => req.path.startsWith('/api/') ? res.status(404).json({ error: 'Endpoint not found' }) : res.status(404).sendFile(path.join(root, 'public/shell.html')));

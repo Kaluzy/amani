@@ -9,7 +9,7 @@ async function main(){
     const repos=listRepos(period);
     return [period,{period,total:repos.length,top:repos.slice(0,25),source:period==='yearly'?'observed-growth':'github-trending'}];
   }));
-  const directory=path.resolve('.trendshift/cache');await mkdir(directory,{recursive:true});
+  const directory=path.resolve('.amani/cache');await mkdir(directory,{recursive:true});
   await writeFile(path.join(directory,'ranked.json'),JSON.stringify({periods:rankings,metadata:{source:'sqlite-observations',ranked_at:new Date().toISOString(),periods}},null,2));
   console.log('Exported latest recorded period rankings');
 }

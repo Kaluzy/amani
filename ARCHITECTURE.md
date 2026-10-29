@@ -1,5 +1,22 @@
 # Amani website architecture
 
+## Independent product layer
+
+`public/shortlist.js` validates and bounds browser-only saved public names.
+`public/workbench.js` compares up to four projects from current public metadata;
+shared links contain names only and do not save another visitor’s selections.
+`public/guide.js` is original evidence-first evaluation guidance. No user accounts,
+ad code, tracking or paid placements are implemented. Storage failures remain
+usable in memory until reload/close. Privacy copy describes the actual behavior.
+
+All exports pass `scripts/verify-dist.js`: every route, JSON endpoint, repository/
+topic reference, ranked membership, metadata tag, sitemap and local asset. The
+allowlisted recovery export is generated from the same database as the release.
+`src/lib/public-seed.js` rejects invalid recovery data before ingestion.
+
+This checkout uses `AMANI_DB_PATH` and `.amani/` for its own namespace. It is not
+automatically mirrored to another local service or its private data directory.
+
 ## GitHub Pages
 
 The public project site is https://kaluzy.github.io/amani/. `deployment.js` reads
@@ -38,10 +55,10 @@ served locally. No build step, CSS CDN, font CDN or chart mock is required.
 - `public/cards.css`: card readability, visible statistic labels, exact counts, full
   descriptions, period-specific gains, truthful ranking context and responsive list view.
 - `scripts/qa-check.js`: read-only live API checks and optional isolated regressions,
-  with bounded latest/previous JSON reports in `.trendshift/qa/`.
+  with bounded latest/previous JSON reports in `.amani/qa/`.
 
-Legacy `.html` paths redirect to canonical application routes. Older public templates
-and JS remain historical references; only shell.html and the modules above are active.
+Compatible `.html` paths redirect to canonical routes. Only the shared shell and
+current application modules ship; unused prototype templates are not included.
 
 ## Feature contract
 
@@ -57,7 +74,9 @@ and JS remain historical references; only shell.html and the modules above are a
 | `/live` | latest daily collection | timestamped source-labeled feed, reload, 60s read refresh |
 | `/topics` | actual repository topic metadata | topic filtering and real counts |
 | `/topics/:slug` | repositories containing exact topic | shared repository listing controls |
-| `/submit` | POST `/api/submissions` | validated public GitHub name, persisted pending review, duplicate handling |
+| `/workbench` | current catalog + browser-only saved names | shortlist, compare up to four, share public names; storage fallback |
+| `/guide` | original local editorial content | evidence-first project evaluation guidance |
+| `/submit` | GitHub Issues on Pages; POST `/api/submissions` locally | clear public suggestion flow; native local validation/persistence |
 | `/about`, `/privacy`, `/terms`, `/contact` | local explanatory content | working navigation with no dummy links |
 
 All asynchronous pages have loading, empty and retry states. Unknown routes return
@@ -73,9 +92,9 @@ Unknown metadata from HTML does not erase previously known API metadata. Failed
 source requests do not overwrite an old batch. Snapshot stars/forks come from actual
 page values, not a default-zero fallback after an API failure.
 
-Existing corrupted snapshots remain for audit. Verified history includes the explicit
-`github`, `trending-v3`, and `github-cache` sources; old `trending` observations are
-excluded from growth/charts. Cache metadata imports do not create historical samples.
+Verified history includes the explicit `github`, `trending-v3`, and `github-cache`
+sources; unverified observations are excluded from public history and charts.
+Cache metadata imports do not create historical samples.
 Annual views require two distinct UTC observation dates; a new database cannot claim
 year-long growth. Card period gains are GitHub-reported period gains, not interpolated
 history. Missing fields display as unavailable where the schema permits it.
@@ -83,16 +102,14 @@ history. Missing fields display as unavailable where the schema permits it.
 ## Running and verification
 
 `npm run refresh` imports known cached metadata and fetches three public Trending pages.
-`npm run serve` listens on localhost:3002 (PORT overrides). TRENDSHIFT_DB_PATH selects
+`npm run serve` listens on localhost:3002 (PORT overrides). AMANI_DB_PATH selects
 an isolated SQLite file; default paths are relative to this repository, not shell cwd.
 `npm run full` refreshes then serves. Check `/health` for served version and `/api/status`
 for each period's coverage. Reload an existing process to activate backend changes.
 
-The deployed user service is `amani-repository-hub.service`; an hourly
-`amani-repository-refresh.timer` activates the bounded refresh oneshot. Both use the
-existing Mise Node shim on this machine. Unit sources live in `deploy/`. Service
-logs are available through the user journal. The server binds only localhost:3002;
-existing access/tunnel configuration remains the source of external reachability.
+The public deployment is GitHub Pages, not the local Node process. The public
+workflow collects and builds against a public-only store. Developer-specific
+services, tunnels, private data directories and local coordination do not ship.
 
 `npm test` verifies transaction rollback, upsert preservation, complete-batch selection,
 source parsing, cumulative totals, yearly coverage, APIs, submissions and actual browser
@@ -101,13 +118,18 @@ screenshots and reject overflow, source injection and broken local requests.
 
 ## Ongoing QA and reporting
 
-`npm run qa` checks the live localhost website, including source freshness, period
-coverage and chart dependencies. `npm run qa:full` also executes every `test/*.test.js`
-file against disposable data. `amani-repository-qa.timer` schedules this daily around
-04:15 local time, with catch-up on the next active session and bounded execution.
-Results are `.trendshift/qa/latest.json` and `previous.json`; failures exit nonzero
-and remain visible in the user service journal. This is continuous verification,
-not an unattended code-editing or external-model process.
+`npm run qa` checks an optional local Node website, including source freshness,
+coverage and chart dependencies. `npm run qa:full` adds disposable-data regressions.
+Local reports are `.amani/qa/latest.json` and `previous.json`.
+
+`npm run qa:public` checks the deployed build, public JSON and critical routes.
+`npm run qa:browser` uses actual Chromium at 320/390/768/1440px, checks rendered
+routes, charts, aligned sections, saved comparisons, sharing and visible internal
+links, and records screenshots/report in `.amani/browser-evidence/`.
+`AMANI_PUBLIC_URL` selects the public/staged base URL. Source releases run tests
+and a dependency audit before building. Every build validates the whole artifact;
+after deployment, a public check confirms the expected commit and live responses.
+Dependency update proposals are reviewed, not automatically merged.
 
 `npm run stats` and `npm run rank` now export actual SQLite observations, never
 generated history or heuristic rankings. Cache metadata restoration fills missing

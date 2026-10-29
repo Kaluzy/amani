@@ -1,8 +1,13 @@
 # Amani
 
-An open-source repository discovery site with readable, aligned cards; Daily,
-Weekly and Monthly GitHub Trending collections; recorded growth; repository
-profiles; language statistics; and topic browsing.
+Your independent open-source field guide. Discover projects, save a personal
+shortlist, compare real signals and choose your next building block.
+
+- Save up to 24 projects in your browser; compare up to four and share a link.
+- Read the original Amani field guide: attention is not a quality rating.
+- Explore timestamped Daily, Weekly and Monthly GitHub Trending collections,
+  observed growth, repository profiles, language statistics and topics.
+- No ads, tracking scripts, paid placements or visitor accounts in this release.
 
 Public website: https://kaluzy.github.io/amani/
 
@@ -15,7 +20,8 @@ Scheduled runs can be delayed by GitHub. Every collection retains its real sourc
 timestamp: this is a periodically updated website, not a real-time event stream.
 
 Search, filtering, sorting, grid/list layouts, charts, deep links and browser
-history run locally in the browser. Repository suggestions use public GitHub
+history run locally in the browser. Saved names stay in browser local storage;
+comparison links contain only selected public names. Repository suggestions use public GitHub
 Issues because Pages cannot run the Node/SQLite submission endpoint. No private
 workspace submissions, tokens, backups or SQLite database are published.
 
@@ -44,9 +50,23 @@ npm run build:pages
 npm test
 ```
 
-`TRENDSHIFT_DB_PATH` selects a disposable/public SQLite store. The Pages output is
+`AMANI_DB_PATH` selects a disposable/public SQLite store. The Pages output is
 `dist/`; `PAGES_BASE=/amani` is the GitHub project base path. The workflow publishes
 only that output. Do not publish a local database or workspace backups.
+
+`PAGES_ORIGIN` can configure an approved HTTPS origin and `PAGES_BASE` may be empty
+for a future root-domain deployment. No custom domain or hosting migration is
+configured by this release. Run `npm run verify:dist` to validate every generated
+route, exported JSON endpoint, data reference, metadata tag and asset before upload.
+The builder generates a matching public recovery seed automatically.
+
+## Public use versus monetization
+
+The free site is not an ad-network approval or a business-launch clearance. Review
+hosting restrictions, provenance/reuse rights, original-content requirements,
+privacy disclosures and owner-approved monetization before selling traffic or
+placements. No revenue is promised. See [the shipping review](SHIPPING-REVIEW.md)
+and [source notices](NOTICE.md).
 
 ## Architecture and verification
 

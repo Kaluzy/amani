@@ -32,7 +32,7 @@ test('a hung data request exits loading with an actionable timeout',async t=>{
 });
 test('QA cards and navigation work in the real browser',{timeout:60000},async t=>{
   const temp=mkdtempSync(path.join(os.tmpdir(),'amani-card-browser-'));
-  process.env.TRENDSHIFT_DB_PATH=path.join(temp,'db.sqlite');
+  process.env.AMANI_DB_PATH=path.join(temp,'db.sqlite');
   const {default:db}=await import('../src/lib/database.js');
   const {collect}=await import('../src/lib/catalog.js');
   const {createApp}=await import('../scripts/serve-api.js');

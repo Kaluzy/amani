@@ -8,7 +8,7 @@ import puppeteer from 'puppeteer';
 
 test('website engineering: integrity, source parsing, API and real responsive interactions', { timeout: 180000 }, async t => {
   const temp = mkdtempSync(path.join(os.tmpdir(), 'amani-engineering-'));
-  process.env.TRENDSHIFT_DB_PATH = path.join(temp, 'test.db');
+  process.env.AMANI_DB_PATH = path.join(temp, 'test.db');
   const { default: db, upsertRepo, recordStarSnapshot } = await import('../src/lib/database.js');
   const { collect, listRepos } = await import('../src/lib/catalog.js');
   const { parseTrending } = await import('../scripts/scrape-trending.js');
@@ -66,7 +66,7 @@ test('website engineering: integrity, source parsing, API and real responsive in
   const origin = `http://127.0.0.1:${server.address().port}`;
   const json = async route => { const response = await fetch(origin + route); assert.equal(response.status, 200, route); return response.json(); };
   await t.test('all feature APIs use normalized real data; invalid routes and submissions are handled', async () => {
-    const status = await json('/api/status'); assert.equal(status.version, '3.0.0');
+    const status = await json('/api/status'); assert.equal(status.version, '3.1.0');
     for (const period of ['daily','weekly','monthly','yearly']) assert.ok((await json('/api/repos/' + period)).length > 0);
     const repos = await json('/api/repos'); assert.equal(repos.length, 29); assert.equal(repos[0].owner.login, 'test');
     const detail = await json('/api/repos/detail/test/project-1'); assert.equal(detail.full_name, 'test/project-1'); assert.ok(detail.star_history.length > 1);

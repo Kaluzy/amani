@@ -59,11 +59,38 @@
 .repo-grid.list-view .repo-topics{grid-column:1;display:flex}
 .repo-grid.list-view .repo-actions{grid-column:1/-1}
 .repo-grid.list-view .repo-rank{display:inline-flex}
+.repo-save{margin-top:4px;min-height:42px;width:100%;padding:10px 12px;background:#f1f5eb;color:#34552b;border:1px solid #d3dfc8;border-radius:7px;font:600 12px/1.5 var(--font);cursor:pointer}
+.repo-save[aria-pressed=true]{background:#e5edda;border-color:#8da97b}
+.repo-save:focus-visible,.workbench-choice input:focus-visible{outline:2px solid #344f29;outline-offset:3px}
+.repo-grid.list-view .repo-save{grid-column:1/-1}
+.workbench-choices{display:grid;gap:10px;margin-top:20px}
+.workbench-choice{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.workbench-choice label{display:flex;align-items:center;gap:12px;font-size:13px;overflow-wrap:anywhere;min-width:0;flex:1}
+.workbench-choice input{width:18px;height:18px;accent-color:#466638;flex:none}
+.workbench-choice button{font-size:12px;min-height:40px}
+.comparison-panel{margin-top:22px}
+.comparison-table{min-width:600px;white-space:normal}
+.comparison-table th,.comparison-table td{min-width:140px;max-width:260px;overflow-wrap:anywhere;line-height:1.7;vertical-align:top}
+.comparison-table tr[data-metric="stars"] td,.comparison-table tr[data-metric="forks"] td{color:var(--metric-ink);background:var(--metric-tint);font-weight:600}
+.comparison-share{display:grid;gap:10px;margin-top:20px;grid-template-columns:minmax(0,1fr) auto;font-size:12px}
+.comparison-share label,.comparison-share span{grid-column:1/-1}
+.comparison-share input{min-width:0;width:100%;font-size:12px}
+.field-guide .notice{font-size:13px;line-height:1.8}
+.prose p,.prose li{font-size:14px;color:#4d5a46}
+.field-guide p{font-size:15px}
+.metric-label{font-size:12px;color:#53624b}
+.metric-note{font-size:11px;color:#5c6b52;line-height:1.6}
+.filter-field{font-size:12px;color:#53624b}
+.filter-field select{font-size:12px;min-height:40px}
+.results-count{font-size:12px;color:#5f6c56}
+.data-table th{font-size:11px;color:#53624b}
+.freshness-notice{margin-top:0}
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
 /* Share content tracks across each visual row; variable text must not move
    neighboring language fields, totals, growth panels or action links. */
 @supports(grid-template-rows:subgrid){
   .repo-grid:not(.list-view){row-gap:16px}
-  .repo-grid:not(.list-view)>.repo-card{display:grid;grid-template-rows:subgrid;grid-row:span 9;row-gap:0;align-items:start}
+  .repo-grid:not(.list-view)>.repo-card{display:grid;grid-template-rows:subgrid;grid-row:span 10;row-gap:0;align-items:start}
   .repo-grid:not(.list-view) .repo-card-top{grid-row:1}
   .repo-grid:not(.list-view) .repo-identity{grid-row:2}
   .repo-grid:not(.list-view) .repo-description{grid-row:3}
@@ -74,6 +101,7 @@
   .repo-grid:not(.list-view) .repo-data-note{grid-row:3}
   .repo-grid:not(.list-view) .repo-topics{grid-row:8}
   .repo-grid:not(.list-view) .repo-actions{grid-row:9}
+  .repo-grid:not(.list-view) .repo-save{grid-row:10}
 }
 @media(min-width:601px) and (max-width:1050px){
   .repo-grid:not(.list-view){grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -84,12 +112,15 @@
   .repo-grid.list-view .repo-stat-block{margin-top:auto}
 }
 @media(max-width:380px){
+  .repo-card .repo-stats dd{font-size:18px}
   .repo-stats{gap:8px}
   .repo-stats>[data-metric]{padding:10px 8px}
   .repo-card .repo-rank{font-size:11px;padding:5px 7px}
   .repo-actions{gap:8px}
 }
 @media(max-width:600px){
+  .workbench-choice{flex-direction:column;align-items:stretch}
+  .workbench-choice button{width:100%}
   .repo-card{padding:22px}
   .repo-card .repo-description{font-size:14px}
   .repo-card .repo-name{font-size:22px}

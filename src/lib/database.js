@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const DB_PATH = process.env.TRENDSHIFT_DB_PATH || fileURLToPath(new URL('../../.trendshift/amani.db', import.meta.url));
+const DB_PATH = process.env.AMANI_DB_PATH || fileURLToPath(new URL('../../.amani/amani.db', import.meta.url));
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 

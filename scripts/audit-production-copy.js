@@ -3,7 +3,7 @@ import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { once } from 'node:events';
 import puppeteer from 'puppeteer';
-if (!process.env.TRENDSHIFT_DB_PATH) throw new Error('Set TRENDSHIFT_DB_PATH to a disposable production-data copy before auditing.');
+if (!process.env.AMANI_DB_PATH) throw new Error('Set AMANI_DB_PATH to a disposable production-data copy before auditing.');
 const { createApp } = await import('./serve-api.js');
 const { default: db } = await import('../src/lib/database.js');
 

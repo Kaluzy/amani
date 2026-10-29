@@ -4,11 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f6f7f4">
-  <meta name="description" content="Explore open-source repositories with real GitHub Trending collections, recorded growth, language statistics, and topics.">
-  <title>Amani — Open-source intelligence</title>
+  <meta name="description" content="Amani is your independent open-source field guide. Discover projects, save a shortlist, compare real signals, and choose what to build with.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; img-src 'self' data: https://avatars.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self' https://github.com">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Amani — Your open-source field guide</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/design.css?v=3">
-  <link rel="stylesheet" href="/cards.css?v=3.4">
+  <link rel="stylesheet" href="/cards.css?v=3.1.0">
   <script src="/vendor/chart.js" defer></script>
   <script type="module" src="/client.js?v=3"></script>
 </head>
@@ -16,7 +18,7 @@
   <a class="skip-link" href="#mainContent">Skip to content</a>
   <div class="app-layout">
     <aside class="sidebar" id="sidebar" aria-label="Main navigation">
-      <a class="brand" href="/" data-nav><span class="brand-mark" aria-hidden="true">a<span>↗</span></span><span>amani<span class="brand-caption">OPEN-SOURCE INTELLIGENCE</span></span></a>
+      <a class="brand" href="/" data-nav><span class="brand-mark" aria-hidden="true">a<span>◇</span></span><span>amani<span class="brand-caption">THE OPEN-SOURCE FIELD GUIDE</span></span></a>
       <p class="nav-label">WORKSPACE</p>
       <nav id="mainNav" aria-label="Explore repositories"></nav>
       <div class="sidebar-bottom"><div class="workspace-status"><span class="status-dot"></span><div>Built on real observations<span id="sidebarCount">Connecting to your collection…</span></div></div><a href="/about" data-nav class="sidebar-about">About the data <span aria-hidden="true">↗</span></a></div>
@@ -30,7 +32,7 @@
         <a class="button button-dark topbar-submit" href="/submit" data-nav><span aria-hidden="true">＋</span> Submit repository</a>
       </header>
       <main id="mainContent" class="main-content" tabindex="-1"><div class="page-loading" role="status">Loading your workspace…</div></main>
-      <footer class="site-footer"><span>Amani <span class="footer-dot">·</span> A clearer view of open source.</span><nav aria-label="Footer"><a href="/about" data-nav>Data sources</a><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a><a href="/contact" data-nav>Contact</a></nav></footer>
+      <footer class="site-footer"><span>Amani <span class="footer-dot">·</span> Find. Compare. Build.</span><nav aria-label="Footer"><a href="/guide" data-nav>Field guide</a><a href="/about" data-nav>Data sources</a><a href="/privacy" data-nav>Privacy</a><a href="/terms" data-nav>Terms</a><a href="/contact" data-nav>Contact</a></nav></footer>
     </div>
   </div>
   <div id="announcements" class="sr-only" role="status" aria-live="polite"></div>

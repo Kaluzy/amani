@@ -1,11 +1,14 @@
 {
-  "name": "trendshift-superpowers",
-  "version": "3.0.0",
-  "description": "Live trending GitHub repository tracker - full trendshift.io clone",
+  "name": "amani-field-guide",
+  "version": "3.1.0",
+  "description": "Amani: an independent open-source field guide with verified signals and a personal comparison workbench.",
   "type": "module",
   "scripts": {
     "build:pages": "node scripts/build-pages.js",
-    "fetch": "node scripts/fetch-trending.js",
+    "verify:dist": "node scripts/verify-dist.js",
+    "qa:public": "node scripts/check-public.js",
+    "qa:browser": "node scripts/audit-browser.js",
+    "fetch": "node scripts/scrape-trending.js all",
     "rank": "node scripts/rank-momentum.js",
     "stats": "node scripts/compute-stats.js",
     "serve": "node scripts/serve-api.js",
@@ -20,12 +23,7 @@
     "better-sqlite3": "^13.0.3",
     "chart.js": "^4.4.3",
     "cheerio": "^1.0.0",
-    "date-fns": "^3.6.0",
     "express": "^4.19.2",
-    "node-fetch": "^3.3.2",
     "puppeteer": "^25.16.0"
-  },
-  "devDependencies": {
-    "vitest": "^2.0.5"
   }
 }

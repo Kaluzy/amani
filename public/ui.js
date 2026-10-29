@@ -1,4 +1,5 @@
 import { dataURL, staticMode } from './deployment.js';
+import { savedNames } from './shortlist.js';
 export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 export const number = value => value == null ? '—' : Number(value).toLocaleString();
 export const compact = value => value == null ? '—' : Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value));
@@ -40,12 +41,18 @@ export function card(repo, index, period = 'daily') {
     <p class="repo-data-note">${repo.snapshot_at ? `Collection: ${escapeHTML(relative(repo.snapshot_at))}` : 'Latest known repository totals.'}</p></div>
     ${Array.isArray(repo.topics) && repo.topics.length ? `<div class="repo-topics" aria-label="Topics">${repo.topics.slice(0, 3).map(topic => `<a class="tag" data-nav href="/topics/${encodeURIComponent(topic)}">${escapeHTML(topic)}</a>`).join('')}${repo.topics.length > 3 ? `<a class="tag" data-nav href="${repoPath(fullName)}">+${repo.topics.length - 3} topics</a>` : ''}</div>` : ''}
     <div class="repo-actions"><a class="repo-details-link" data-nav href="${repoPath(fullName)}">View details <span aria-hidden="true">→</span></a><a class="repo-github-link" href="https://github.com/${fullName.split('/').map(encodeURIComponent).join('/')}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHTML(fullName)} on GitHub (new tab)">GitHub <span aria-hidden="true">↗</span></a></div>
+    <button class="repo-save" data-save-repo="${escapeHTML(fullName)}" aria-label="Save ${escapeHTML(fullName)} to your workbench" aria-pressed="${savedNames().includes(fullName)}">${savedNames().includes(fullName) ? '✓ Saved to workbench' : '＋ Save to workbench'}</button>
   </article>`;
 }
 export function state(title, message, { error = false, retry = false } = {}) {
   return `<section class="${error ? 'error-state' : 'empty-state'}"><span class="state-icon" aria-hidden="true">${error ? '!' : '⌕'}</span><h2>${escapeHTML(title)}</h2><p>${escapeHTML(message)}</p>${retry ? '<button class="button button-dark" id="retryPage">Try again</button>' : '<a class="button" href="/github-trending" data-nav>Explore the collection <span aria-hidden="true">↗</span></a>'}</section>`;
 }
 export function periodTabs(current) { return `<nav class="period-tabs" aria-label="Trending period">${['daily', 'weekly', 'monthly', 'yearly'].map(period => `<a data-nav href="/${period}" class="${period === current ? 'active' : ''}" ${period === current ? 'aria-current="page"' : ''}>${period[0].toUpperCase() + period.slice(1)}</a>`).join('')}</nav>`; }
+export function freshnessNotice(status) {
+  const dates = ['daily', 'weekly', 'monthly'].map(period => status.periods?.[period]?.latest).filter(Boolean);
+  const stale = dates.some(value => Date.now() - Date.parse(value.includes('T') ? value : value.replace(' ', 'T') + 'Z') > 3 * 3600000);
+  return stale ? '<div class="notice notice-warning freshness-notice" role="status">Some published collections are more than three hours old. Amani shows the last successful observations; scheduled refreshes can be delayed. Check the collection timestamp before relying on a ranking.</div>' : '';
+}
 export async function getJSON(url, signal, { timeoutMs = 15000 } = {}) {
   const controller = new AbortController();
   let timedOut = false;

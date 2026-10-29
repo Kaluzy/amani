@@ -59,7 +59,7 @@ async function regressions() {
 async function main(){
   const result=await checkWebsite(process.env.AMANI_QA_URL||'http://127.0.0.1:3002');
   if(process.argv.includes('--full')){result.regressions=await regressions();result.ok=result.ok&&result.regressions.ok;}
-  const directory=process.env.AMANI_QA_DIR||path.join(root,'.trendshift/qa');
+  const directory=process.env.AMANI_QA_DIR||path.join(root,'.amani/qa');
   await mkdir(directory,{recursive:true,mode:0o700});
   const previous=await readFile(path.join(directory,'latest.json'),'utf8').catch(error=>{if(error.code==='ENOENT')return null;throw error;});
   if(previous)await writeFile(path.join(directory,'previous.json'),previous,{mode:0o600});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync, unlinkSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -8,12 +8,12 @@ import { once } from 'node:events';
 import express from 'express';
 import puppeteer from 'puppeteer';
 
-test('GitHub Pages export works without a backend under its project base path',{timeout:90000},async t=>{
+test('GitHub Pages export works without a backend under its project base path',{timeout:120000},async t=>{
   const temp=mkdtempSync(path.join(os.tmpdir(),'amani-pages-test-'));
-  process.env.TRENDSHIFT_DB_PATH=path.join(temp,'private.db');
+  process.env.AMANI_DB_PATH=path.join(temp,'private.db');
   const {default:db}=await import('../src/lib/database.js');
   const {collect}=await import('../src/lib/catalog.js');
-  for(const period of ['daily','weekly','monthly'])collect(period,[{full_name:'example/pages',description:'A real static export fixture.',language:'JavaScript',topics:['testing'],stargazers_count:1200,forks_count:80,stars_today:20}]);
+  for(const period of ['daily','weekly','monthly'])collect(period,Array.from({length:5},(_,i)=>({full_name:i?'example/alternative-'+i:'example/pages',description:'A real static export fixture.',language:'JavaScript',topics:['testing'],stargazers_count:1200+i,forks_count:80+i,stars_today:20})));
   db.prepare("INSERT INTO submissions(full_name) VALUES('private/do-not-publish')").run();
   const output=path.join(temp,'dist');const seed=path.join(temp,'seed.json');
   const run=(script,...args)=>{
@@ -23,6 +23,10 @@ test('GitHub Pages export works without a backend under its project base path',{
   run('scripts/pages-seed.js','export');
   assert.ok(!readFileSync(seed,'utf8').includes('private/do-not-publish'));
   run('scripts/build-pages.js');
+  run('scripts/verify-dist.js');
+  const privateFile=path.join(output,'.env');writeFileSync(privateFile,'TEST_ONLY_PRIVATE_SENTINEL=do-not-publish');
+  const rejected=spawnSync(process.execPath,['scripts/verify-dist.js'],{env:{...process.env,PAGES_OUTPUT:output},encoding:'utf8'});
+  assert.notEqual(rejected.status,0,'A private file must block publication');unlinkSync(privateFile);
   const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?walk(path.join(dir,entry.name)):[path.join(dir,entry.name)]);
   assert.ok(walk(output).every(file=>!file.endsWith('.db')&&!file.endsWith('.sqlite')));
   assert.ok(!readFileSync(path.join(output,'data/repos.json'),'utf8').includes('private/do-not-publish'));
@@ -30,10 +34,11 @@ test('GitHub Pages export works without a backend under its project base path',{
   const browser=await puppeteer.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
   t.after(async()=>{await browser.close();await new Promise(resolve=>server.close(resolve));db.close();rmSync(temp,{recursive:true,force:true});});
   const origin=`http://127.0.0.1:${server.address().port}`;
+  const {checkPublic}=await import('../scripts/check-public.js');await checkPublic(origin+'/amani/',{expectedCommit:null});
   const page=await browser.newPage();const errors=[],bad=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)bad.push(r.url());});
   for(const width of [390,768,1440]){
     await page.setViewport({width,height:1000});
-    for(const route of ['/','/daily/','/weekly/','/monthly/','/yearly/','/stats/','/insights/','/topics/','/topics/testing/','/github-trending/','/repositories/example/pages/','/submit/','/about/','/privacy/','/contact/']){
+    for(const route of ['/','/daily/','/weekly/','/monthly/','/yearly/','/stats/','/insights/','/topics/','/topics/testing/','/github-trending/','/repositories/example/pages/','/guide/','/workbench/','/submit/','/about/','/privacy/','/contact/']){
       await page.goto(origin+'/amani'+route,{waitUntil:'networkidle0'});await page.waitForSelector('#mainContent:not([aria-busy])');
       assert.equal(await page.$$eval('.error-state',els=>els.length),0,route);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width} ${route}`);
@@ -48,6 +53,9 @@ test('GitHub Pages export works without a backend under its project base path',{
   assert.match(await page.$eval('.repo-details-link',el=>el.getAttribute('href')),/^\/amani\/repositories\//);
   await page.click('.repo-details-link');await page.waitForSelector('.detail-heading');
   await page.reload({waitUntil:'networkidle0'});assert.ok(await page.$('.detail-heading'));
+  await page.goto(origin+'/amani/weekly/?sort=invalid&view=invalid',{waitUntil:'networkidle0'});
+  assert.equal(await page.$eval('#sortSelect',el=>el.value),'rank');
+  assert.equal(await page.$eval('#gridView',el=>el.getAttribute('aria-pressed')),'true');
   await page.goto(origin+'/amani/',{waitUntil:'networkidle0'});
   await page.type('#globalSearch','pages');await page.$eval('#searchForm',form=>form.requestSubmit());await page.waitForSelector('#sortSelect');
   assert.match(page.url(),/\/amani\/github-trending\?q=pages/);
@@ -56,5 +64,33 @@ test('GitHub Pages export works without a backend under its project base path',{
   await page.waitForSelector('#mainNav a.active[href="/amani/weekly"]');
   await page.waitForSelector('.repo-card');
   assert.equal(await page.$eval('#mainNav a.active',el=>el.getAttribute('aria-current')),'page');
+  const saveNames=await page.$$eval('[data-save-repo]',buttons=>buttons.map(button=>button.dataset.saveRepo));
+  for(const name of saveNames)await page.click(`[data-save-repo="${name}"]`);
+  assert.equal(await page.$eval('#savedCount',el=>el.textContent),'5');
+  await page.reload({waitUntil:'networkidle0'});
+  assert.equal(await page.$eval('#savedCount',el=>el.textContent),'5');
+  await page.click('#mainNav a[href="/amani/workbench"]');await page.waitForSelector('.comparison-table');
+  assert.equal(await page.$$eval('[data-compare]:checked',els=>els.length),4);
+  assert.equal(await page.$$eval('[data-compare]:disabled',els=>els.length),1);
+  const shared=await page.$eval('#comparisonLink',el=>el.value);
+  const visitor=await browser.createBrowserContext();const sharedPage=await visitor.newPage();await sharedPage.setViewport({width:390,height:1000});
+  await sharedPage.goto(shared,{waitUntil:'networkidle0'});await sharedPage.waitForSelector('.comparison-table');
+  assert.equal(await sharedPage.$eval('#savedCount',el=>el.textContent),'0','shared links do not silently save another visitor’s selections');
+  assert.equal(await sharedPage.$$eval('.comparison-table thead th',els=>els.length),5);
+  assert.ok(await sharedPage.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await visitor.close();
+  const blocked=await browser.createBrowserContext();const blockedPage=await blocked.newPage();await blockedPage.setViewport({width:1440,height:1000});
+  await blockedPage.goto(origin+'/amani/daily/',{waitUntil:'networkidle0'});
+  await blockedPage.evaluate(()=>{Storage.prototype.setItem=()=>{throw new DOMException('Storage blocked','QuotaExceededError');};});
+  await blockedPage.click('[data-save-repo]');
+  assert.equal(await blockedPage.$eval('#savedCount',el=>el.textContent),'1');
+  await blockedPage.click('#mainNav a[href="/amani/workbench"]');await blockedPage.waitForSelector('.comparison-table');
+  assert.match(await blockedPage.$eval('.notice',el=>el.textContent),/Storage is blocked/);
+  await blocked.close();
+  await page.setRequestInterception(true);let fail=true;
+  page.on('request',request=>{if(fail&&request.url().includes('/data/status.json'))request.abort();else request.continue();});
+  await page.goto(origin+'/amani/daily/',{waitUntil:'networkidle0'});await page.waitForSelector('.error-state');
+  fail=false;await page.click('#retryPage');await page.waitForSelector('.repo-card');
+  await page.setRequestInterception(false);
   assert.deepEqual(errors,[]);assert.deepEqual(bad,[]);
 });

@@ -1,10 +1,14 @@
-import { escapeHTML, getJSON, state } from './ui.js';
+import { escapeHTML, getJSON, state, freshnessNotice } from './ui.js';
 import { repositories, statistics, insights, topics, activity, detail, submit, information, dispose } from './pages.js';
 import { routeURL, sitePath, prepareLinks } from './deployment.js';
+import { workbench } from './workbench.js';
+import { guide } from './guide.js';
+import { savedNames, setSaved, refreshSaveButtons } from './shortlist.js';
 
 const navigation = [
   ['/', 'Overview', '◫'], ['/daily', 'Daily trending', '↗'], ['/weekly', 'Weekly trending', '▥'], ['/monthly', 'Monthly trending', '▤'], ['/yearly', 'Yearly growth', '◷'],
   ['/stats', 'Statistics', '▥'], ['/insights', 'Insights', '✧'], ['/live', 'Activity', '⌁'], ['/topics', 'Topics', '⊞'], ['/github-trending', 'All repositories', '⌘'],
+  ['/workbench', 'My workbench', '◇'], ['/guide', 'Field guide', '⌁'],
 ];
 const main = document.getElementById('mainContent');
 let activeController;
@@ -14,6 +18,19 @@ let sequence = 0;
 const mobile = matchMedia('(max-width: 900px)');
 document.getElementById('sidebar').inert = mobile.matches;
 document.getElementById('mainNav').innerHTML = navigation.map(([url,label,icon], index) => `${index === 5 ? '<div class="nav-separator"></div><p class="nav-label">DISCOVER MORE</p>' : ''}<a class="nav-link" data-nav href="${url}"><span class="nav-icon" aria-hidden="true">${icon}</span>${label}${url === '/live' ? '<span class="nav-tag">FEED</span>' : ''}</a>`).join('');
+const savedLink = document.querySelector('#mainNav a[href="/workbench"]');
+savedLink.insertAdjacentHTML('beforeend', '<span class="nav-tag" id="savedCount" aria-label="Saved repository count">0</span>');
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-save-repo]');
+  if (!button) return;
+  const result = setSaved(button.dataset.saveRepo, !savedNames().includes(button.dataset.saveRepo));
+  refreshSaveButtons();
+  document.getElementById('announcements').textContent = result.message;
+});
+window.addEventListener('amani:saved-change', () => refreshSaveButtons());
+window.addEventListener('storage', event => {
+  if (event.key === null || event.key === 'amani:workbench:v1') window.dispatchEvent(new CustomEvent('amani:saved-change'));
+});
 function closeMenu() {
   const focusInMenu = document.getElementById('sidebar').contains(document.activeElement);
   document.getElementById('sidebar').classList.remove('open');
@@ -35,6 +52,7 @@ document.addEventListener('keydown', event => {
   if (event.key === '/' && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName)) { event.preventDefault(); document.getElementById('globalSearch').focus(); }
 });
 async function render() {
+  clearTimeout(debounce);
   const id = ++sequence;
   activeController?.abort(); dispose(); cleanup?.(); cleanup = null; searchHandler = null;
   activeController = new AbortController();
@@ -66,6 +84,8 @@ async function render() {
     document.getElementById('sidebarCount').textContent = `${Number(status.metrics.totalRepos).toLocaleString()} repositories tracked`;
     const ctx = { main, url, status, signal: activeController.signal, reload: render, setSearch: fn => { searchHandler = fn; } };
     if (currentPath === '/') await repositories(ctx, { overview: true });
+    else if (currentPath === '/workbench') await workbench(ctx);
+    else if (currentPath === '/guide') guide(ctx);
     else if (['daily','weekly','monthly','yearly'].includes(parts[0]) && parts.length === 1) await repositories(ctx, { period: parts[0] });
     else if (currentPath === '/github-trending') await repositories(ctx, { period: 'all' });
     else if (currentPath === '/stats') await statistics(ctx);
@@ -77,11 +97,18 @@ async function render() {
     else if (currentPath === '/submit') await submit(ctx);
     else if (['about','privacy','terms','contact'].includes(parts[0]) && parts.length === 1) information(ctx, parts[0]);
     else main.innerHTML = state('This path leads somewhere new.', 'The page you requested does not exist. Explore the collection to continue.');
+    main.insertAdjacentHTML('afterbegin', freshnessNotice(status));
   } catch (error) {
     if (error.name === 'AbortError' || id !== sequence) return;
     main.innerHTML = state('We couldn’t load this page.', error.message, { error: true, retry: true });
     document.getElementById('retryPage').addEventListener('click', render);
-  } finally { if (id === sequence) { prepareLinks(); main.removeAttribute('aria-busy'); } }
+  } finally { if (id === sequence) {
+    prepareLinks(); refreshSaveButtons(); main.removeAttribute('aria-busy');
+    const canonical = new URL(location.href); canonical.search = ''; canonical.hash = '';
+    if (!canonical.pathname.endsWith('/')) canonical.pathname += '/';
+    document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonical.href);
+    document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonical.href);
+  } }
 }
 export function navigate(url) { history.pushState(null, '', sitePath(url)); closeMenu(); window.scrollTo(0, 0); render(); main.focus({ preventScroll: true }); }
 document.addEventListener('click', event => {

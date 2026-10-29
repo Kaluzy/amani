@@ -16,7 +16,7 @@ async function main(){
   }
   for(const row of Object.values(languages))row.avgStars=row.knownRepos?Math.round(row.totalStars/row.knownRepos):null;
   const charts={monthlyStars:chartData('month','stars'),monthlyForks:chartData('month','forks'),yearlyStars:chartData('year','stars'),yearlyForks:chartData('year','forks')};
-  const directory=path.resolve('.trendshift/cache');await mkdir(directory,{recursive:true});
+  const directory=path.resolve('.amani/cache');await mkdir(directory,{recursive:true});
   await writeFile(path.join(directory,'stats.json'),JSON.stringify({languages,charts,metadata:{source:'sqlite-observations',computed_at:new Date().toISOString(),total_repos:repos.length}},null,2));
   console.log(`Exported observed statistics for ${repos.length} repositories`);
 }

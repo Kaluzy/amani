@@ -6,7 +6,7 @@ import path from 'node:path';
 
 test('unverified legacy metadata stays unknown until a genuine zero observation exists', async t => {
   const temp = mkdtempSync(path.join(os.tmpdir(), 'amani-legacy-'));
-  process.env.TRENDSHIFT_DB_PATH = path.join(temp, 'test.db');
+  process.env.AMANI_DB_PATH = path.join(temp, 'test.db');
   const { default: db, upsertRepo, recordStarSnapshot } = await import('../src/lib/database.js');
   const { normalize } = await import('../src/lib/catalog.js');
   t.after(() => { db.close(); rmSync(temp, { recursive: true, force: true }); });

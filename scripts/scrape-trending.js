@@ -40,7 +40,7 @@ export async function enrichRepoData(repo) {
   return { ...repo, ...data, html_url: data.html_url || repo.html_url || repo.url };
 }
 
-export async function importKnownMetadata(cachePath = fileURLToPath(new URL('.trendshift/cache/trending.json', root))) {
+export async function importKnownMetadata(cachePath = fileURLToPath(new URL('.amani/cache/trending.json', root))) {
   let data;
   try { data = JSON.parse(await readFile(cachePath, 'utf8')); } catch (error) {
     if (error.code === 'ENOENT') return 0;

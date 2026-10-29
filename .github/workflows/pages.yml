@@ -12,31 +12,33 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
-      TRENDSHIFT_DB_PATH: ${{ github.workspace }}/.trendshift/pages.db
+      AMANI_DB_PATH: ${{ github.workspace }}/.amani/pages.db
       PAGES_BASE: /amani
       PAGES_REPOSITORY: Kaluzy/amani
       PUPPETEER_SKIP_DOWNLOAD: 'true'
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Audit release dependencies
+        run: npm audit --audit-level=high
       - name: Install Chromium for release checks
         if: github.event_name != 'schedule'
         run: npx puppeteer browsers install chrome
       - name: Verify source changes before publishing
         if: github.event_name != 'schedule'
         run: npm test
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .trendshift/pages.db
-          key: pages-data-${{ github.run_id }}
-          restore-keys: pages-data-
+          path: .amani/pages.db
+          key: amani-public-v1-${{ github.run_id }}
+          restore-keys: amani-public-v1-
       - run: node scripts/pages-seed.js import
         env:
           PAGES_SEED_URL: https://kaluzy.github.io/amani/data/public-seed.json
@@ -44,20 +46,21 @@ jobs:
         run: npm run refresh
       - name: Build static pages and public data
         run: |
-          node scripts/pages-seed.js export
           npm run build:pages
-      - uses: actions/cache/save@v4
+          npm run verify:dist
+      - uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: .trendshift/pages.db
-          key: pages-data-${{ github.run_id }}
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v4
+          path: .amani/pages.db
+          key: amani-public-v1-${{ github.run_id }}
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -66,4 +69,13 @@ jobs:
     steps:
       - name: Deploy public website
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+      - name: Check actual public routes and data after deployment
+        env:
+          AMANI_PUBLIC_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: node scripts/check-public.js
