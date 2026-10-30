@@ -96,6 +96,34 @@ test('QA cards and navigation work in the real browser',{timeout:90000},async t=
       await page.close();
     }
   });
+  await t.test('visual identity uses a loaded shared vector mark, real featured data, and working hero links',async()=>{
+    const page=await browser.newPage();
+    const status=await fetch(origin+'/api/status').then(response=>response.json());
+    status.metrics.totalStars=38610493;
+    await page.setRequestInterception(true);
+    page.on('request',request=>request.url().endsWith('/api/status')?request.respond({contentType:'application/json',body:JSON.stringify(status)}):request.continue());
+    for(const width of [320,390,768,1440,1920]){
+      await page.setViewport({width,height:1000});
+      await page.goto(origin+'/',{waitUntil:'networkidle0'});
+      assert.equal(await page.$$eval('h1',els=>els.length),1);
+      assert.ok(await page.$eval('.brand-mark',img=>img.complete&&img.naturalWidth>0));
+      assert.ok(await page.$eval('.hero-mark',img=>img.complete&&img.naturalWidth>0));
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`hero ${width}px`);
+      assert.equal(await page.$eval('.hero-feature strong',el=>el.textContent),varied[0].full_name);
+      assert.equal(await page.$$eval('#mainNav .nav-icon svg',els=>els.length),12);
+      assert.ok(await page.$eval('.hero-copy',el=>el.scrollWidth<=el.clientWidth+1),`hero copy ${width}px`);
+      assert.ok(await page.$$eval('.metric-value',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`overview exact totals ${width}px`);
+      await page.goto(origin+'/stats',{waitUntil:'networkidle0'});
+      assert.ok(await page.$$eval('.metric-value',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`statistics exact totals ${width}px`);
+    }
+    await page.goto(origin+'/',{waitUntil:'networkidle0'});
+    await page.focus('.hero-primary');await page.keyboard.press('Enter');
+    await page.waitForSelector('#sortSelect');assert.match(page.url(),/\/daily$/);
+    await page.goto(origin+'/',{waitUntil:'networkidle0'});
+    await page.click('.hero-feature');await page.waitForSelector('.detail-heading');
+    assert.match(page.url(),/\/repositories\/example\/clarity$/);
+    await page.close();
+  });
   await t.test('statistics sorting is keyboard accessible, escaped, and survives reload',async()=>{
     const page=await browser.newPage();
     await page.setRequestInterception(true);

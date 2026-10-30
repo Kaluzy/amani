@@ -25,6 +25,8 @@ try {
       assert.ok(response.ok() || response.status() === 304, `${width}px ${route || '/'}: HTTP ${response.status()}`); await page.waitForSelector('#mainContent:not([aria-busy])');
       assert.equal(await page.$$eval('.error-state', elements => elements.length), 0, `${width} ${route}`);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${width} ${route} overflow`);
+      assert.ok(await page.$$eval('.metric-value', elements => elements.every(element=>element.scrollWidth<=element.clientWidth+1)), `${width} ${route} metric value overflow`);
+      assert.ok(await page.$eval('.brand-mark', image=>image.complete && image.naturalWidth>0), 'Amani vector mark loads');
       if (route === 'stats/') assert.equal(await page.evaluate(() => Object.keys(Chart.instances).length), 4);
       for (const href of await page.$$eval('a[href]', elements => elements.map(element => element.href))) if (href.startsWith(base)) links.add(href);
       if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1) : 'overview'}-${width}.png`), fullPage: true });
