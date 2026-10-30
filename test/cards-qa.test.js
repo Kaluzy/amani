@@ -30,7 +30,7 @@ test('a hung data request exits loading with an actionable timeout',async t=>{
   await once(server,'listening');t.after(()=>new Promise(resolve=>server.close(resolve)));
   await assert.rejects(getJSON(`http://127.0.0.1:${server.address().port}`,undefined,{timeoutMs:20}),/timed out/i);
 });
-test('QA cards and navigation work in the real browser',{timeout:60000},async t=>{
+test('QA cards and navigation work in the real browser',{timeout:90000},async t=>{
   const temp=mkdtempSync(path.join(os.tmpdir(),'amani-card-browser-'));
   process.env.AMANI_DB_PATH=path.join(temp,'db.sqlite');
   const {default:db}=await import('../src/lib/database.js');
@@ -95,6 +95,42 @@ test('QA cards and navigation work in the real browser',{timeout:60000},async t=
       assert.ok(await page.$$eval('.repo-stats dd',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`counts fit at ${width}px`);
       await page.close();
     }
+  });
+  await t.test('statistics sorting is keyboard accessible, escaped, and survives reload',async()=>{
+    const page=await browser.newPage();
+    await page.setRequestInterception(true);
+    const rows=[
+      {language:'Python',repos:6,totalStars:10,totalForks:null,avgStars:2},
+      {language:'Rust',repos:2,totalStars:null,totalForks:8,avgStars:null},
+      {language:'JavaScript',repos:3,totalStars:0,totalForks:0,avgStars:0},
+      {language:'<img src=x onerror=alert(1)>',repos:1,totalStars:1,totalForks:1,avgStars:1},
+    ];
+    page.on('request',request=>request.url().endsWith('/api/stats/languages')?request.respond({contentType:'application/json',body:JSON.stringify(rows)}):request.continue());
+    await page.setViewport({width:390,height:900});
+    await page.goto(origin+'/stats',{waitUntil:'networkidle0'});
+    assert.equal(await page.evaluate(()=>Object.keys(Chart.instances).length),4);
+    assert.ok(await page.evaluate(()=>Object.values(Chart.instances).every(chart=>chart.config.type==='bar')),'single-period history compares real values, not invented trend lines');
+    for(const [key,first] of [['repos','Python'],['totalStars','Python'],['totalForks','Rust'],['avgStars','Python'],['language','<img src=x onerror=alert(1)>']]){
+      await page.select('#languageSort',key);
+      assert.equal(await page.$eval('#languageTable tr',el=>el.dataset.language),first);
+      assert.equal(await page.$$eval('#languageTable img',els=>els.length),0);
+      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+    }
+    await page.select('#languageSort','totalStars');
+    await page.click('#languageDirection');
+    assert.equal(await page.$eval('#languageTable tr',el=>el.dataset.language),'JavaScript');
+    assert.equal(await page.$eval('#languageTable tr:last-child',el=>el.dataset.language),'Rust');
+    await page.reload({waitUntil:'networkidle0'});
+    assert.equal(await page.$eval('#languageSort',el=>el.value),'totalStars');
+    assert.equal(await page.$eval('[data-sort-column="totalStars"]',el=>el.getAttribute('aria-sort')),'ascending');
+    await page.focus('[data-language-sort="totalStars"]');
+    await page.keyboard.press('Enter');
+    assert.equal(await page.$eval('[data-sort-column="totalStars"]',el=>el.getAttribute('aria-sort')),'descending');
+    assert.equal(await page.$$eval('th[aria-sort]',els=>els.length),1);
+    await page.goto(origin+'/stats?sort=invalid&dir=invalid',{waitUntil:'networkidle0'});
+    assert.equal(await page.$eval('#languageSort',el=>el.value),'repos');
+    assert.equal(new URL(page.url()).search,'');
+    await page.close();
   });
   await t.test('malformed client paths show a recoverable error instead of throwing',async()=>{
     const page=await browser.newPage();const errors=[];page.on('pageerror',error=>errors.push(error.message));

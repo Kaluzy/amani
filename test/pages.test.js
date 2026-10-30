@@ -47,6 +47,13 @@ test('GitHub Pages export works without a backend under its project base path',{
       if(route==='/submit/'){assert.equal(await page.$$eval('#submitForm',els=>els.length),0);assert.ok(await page.$('a[href*="github.com/Kaluzy/amani/issues/new"]'));}
     }
   }
+  await page.goto(origin+'/amani/stats/',{waitUntil:'networkidle0'});
+  await page.select('#languageSort','totalStars');await page.click('#languageDirection');
+  await page.reload({waitUntil:'networkidle0'});
+  assert.match(page.url(),/\/amani\/stats\//);
+  assert.equal(await page.$eval('#languageSort',el=>el.value),'totalStars');
+  assert.equal(await page.$eval('th[aria-sort]',el=>el.getAttribute('aria-sort')),'ascending');
+  assert.ok(await page.$('link[href*="/amani/premium.css?v="]'));
   await page.goto(origin+'/amani/weekly/',{waitUntil:'networkidle0'});
   await page.select('#sortSelect','stars');await page.click('#listView');
   assert.match(page.url(),/\/amani\/weekly\//);

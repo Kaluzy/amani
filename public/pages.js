@@ -9,15 +9,18 @@ function chart(id, data, type = 'line') {
   const canvas = document.getElementById(id);
   if (!canvas || !data.labels.length || !data.datasets.length) return;
   if (!window.Chart) { canvas.replaceWith(Object.assign(document.createElement('p'), { textContent: 'Chart unavailable. Recorded values are shown in the tables.' })); return; }
-  charts.push(new window.Chart(canvas, { type, data: {
-    ...data, datasets: data.datasets.map((row, i) => ({ ...row, borderColor: ['#5a8054', '#8d9d73', '#a4b389', '#c1aa7c', '#879da6', '#ae95ac'][i % 6], backgroundColor: ['#91ac7a', '#b7c59d', '#d1d8ba', '#d9c6a4', '#b5c8ce', '#d0bdd0'][i % 6], borderWidth: 2, tension: .25, pointRadius: 3, fill: false })) }, options: {
+  const chartType = type === 'line' && data.labels.length === 1 && id !== 'repoHistoryChart' ? 'bar' : type;
+  charts.push(new window.Chart(canvas, { type: chartType, data: {
+    ...data, datasets: data.datasets.map((row, i) => ({ ...row, borderColor: ['#926220', '#79516c', '#3f705d', '#a95039', '#69616e', '#73733d'][i % 6], backgroundColor: ['#926220', '#79516c', '#3f705d', '#a95039', '#69616e', '#73733d'][i % 6], borderWidth: chartType === 'bar' ? 0 : 2.5, borderRadius: chartType === 'bar' ? 5 : 0, maxBarThickness: 44, tension: .3, pointRadius: 3.5, pointHoverRadius: 6, pointBorderWidth: 2, pointBorderColor: '#fff', fill: false })) }, options: {
     responsive: true, maintainAspectRatio: false, animation: false,
-    plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 6, font: { size: 10 }, padding: 18 } } },
-    scales: { x: { grid: { display: false }, ticks: { color: '#89967f', font: { size: 10 } } }, y: { beginAtZero: true, grid: { color: '#eff2e8' }, border: { display: false }, ticks: { color: '#89967f', font: { size: 10 }, callback: compact } } },
+    interaction: { mode: 'nearest', intersect: false },
+    plugins: { legend: { position: 'bottom', labels: { color: '#55545c', usePointStyle: true, boxWidth: 7, font: { size: 11, family: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }, padding: 18 } }, tooltip: { backgroundColor: '#25242b', titleColor: '#fff', bodyColor: '#f5f5f7', padding: 14, cornerRadius: 12, displayColors: true } },
+    scales: { x: { grid: { display: false }, border: { display: false }, ticks: { color: '#68676e', font: { size: 11 }, maxRotation: 0, autoSkip: true } }, y: { beginAtZero: true, grid: { color: '#eeedf0' }, border: { display: false }, ticks: { color: '#68676e', font: { size: 11 }, padding: 10, callback: compact } } },
   } }));
 }
 function chartPanel(title, description, id, data) {
-  return `<section class="panel"><h2>${e(title)}</h2><p class="panel-description">${e(description)}</p>${data.labels.length ? `<div class="chart-container"><canvas id="${id}" role="img" aria-label="${e(title)}"></canvas></div>` : '<div class="notice">No verified historical observations yet. Charts appear as collections are recorded.</div>'}</section>`;
+  const singleBucket = data.labels.length === 1 && id !== 'repoHistoryChart';
+  return `<section class="panel chart-panel" data-metric="${id.toLowerCase().includes('forks') ? 'forks' : 'stars'}"><div class="chart-kicker"><span class="chart-indicator" aria-hidden="true"></span>RECORDED TOTALS</div><h2>${e(title)}</h2><p class="panel-description">${e(description)}</p>${data.labels.length ? `<div class="chart-container"><canvas id="${id}" role="img" aria-label="${e(title)}${singleBucket ? ' — single recorded period, bars compare languages' : ''}"></canvas></div>${singleBucket ? '<p class="history-caption">One recorded period. Bars compare languages, not a growth trend.</p>' : ''}` : '<div class="notice">No verified historical observations yet. Charts appear as collections are recorded.</div>'}</section>`;
 }
 function repoGrid(items, period, limit = 6) { return `<div class="repo-grid">${items.slice(0, limit).map((repo, i) => card(repo, i, period)).join('')}</div>`; }
 
@@ -88,12 +91,54 @@ export async function repositories(ctx, { period = 'daily', overview = false, to
   render();
 }
 
+const languageSorts = { repos: 'Repositories', totalStars: 'Total stars', totalForks: 'Total forks', avgStars: 'Average stars', language: 'Language' };
+export function sortLanguageRows(rows, key = 'repos', direction = 'desc') {
+  if (!Object.hasOwn(languageSorts, key)) key = 'repos';
+  const multiplier = direction === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    if (a[key] == null || b[key] == null) return (a[key] == null) - (b[key] == null) || a.language.localeCompare(b.language);
+    const comparison = key === 'language' ? a.language.localeCompare(b.language) : a[key] - b[key];
+    return comparison * multiplier || a.language.localeCompare(b.language);
+  });
+}
+
 export async function statistics(ctx) {
   const [data, languages] = await Promise.all([getJSON('/api/stats/charts', ctx.signal), getJSON('/api/stats/languages', ctx.signal)]);
-  ctx.main.innerHTML = heading('A little perspective.', 'Understand the languages, projects, and patterns across your collection.', 'COLLECTION STATISTICS') + metrics(ctx.status.metrics)
+  ctx.main.innerHTML = heading('The bigger picture.', 'A clear view of the projects, languages, and momentum in your collection.', 'COLLECTION STATISTICS') + metrics(ctx.status.metrics)
     + '<div class="notice">These totals describe the tracked collection, not all of GitHub. Historical charts use one verified observation per repository per month or year.</div>'
     + `<div class="two-column">${chartPanel('Stars over time', 'Monthly recorded totals, grouped by language.', 'monthlyStarsChart', data.monthlyStars)}${chartPanel('Forks over time', 'Monthly recorded totals, grouped by language.', 'monthlyForksChart', data.monthlyForks)}${chartPanel('Yearly star observations', 'Recorded yearly totals. Missing years are not estimated.', 'yearlyStarsChart', data.yearlyStars)}${chartPanel('Yearly fork observations', 'Recorded yearly totals. Missing years are not estimated.', 'yearlyForksChart', data.yearlyForks)}</div>`
-    + `<section class="panel" style="margin-top:22px"><h2>The language landscape</h2><p class="panel-description">Latest known counts for every tracked language.</p><div class="table-wrap"><table class="data-table"><thead><tr><th>Language</th><th class="number">Repositories</th><th class="number">Stars</th><th class="number">Forks</th><th class="number">Average stars</th></tr></thead><tbody id="languageTable">${languages.map(row => `<tr><td>${language(row.language)}</td><td class="number">${number(row.repos)}</td><td class="number">${number(row.totalStars)}</td><td class="number">${number(row.totalForks)}</td><td class="number">${number(row.avgStars)}</td></tr>`).join('') || '<tr><td colspan="5">Language data appears after the first collection.</td></tr>'}</tbody></table></div></section>`;
+    + `<section class="panel language-panel"><div class="landscape-heading"><div><div class="chart-kicker">EXPLORE THE MIX</div><h2 id="languageHeading">The language landscape</h2><p class="panel-description">Latest known counts for every tracked language.</p></div><div class="language-controls"><label class="filter-field" for="languageSort">Sort by<select id="languageSort">${Object.entries(languageSorts).map(([key, label]) => `<option value="${key}">${label}</option>`).join('')}</select></label><button class="button" id="languageDirection" aria-label="Sort ascending">↓ Descending</button></div></div><p class="sort-caption" id="languageSortStatus" role="status"></p><div class="table-wrap" role="region" aria-labelledby="languageHeading" tabindex="0"><table class="data-table language-table"><thead><tr>${[['language','Language'],['repos','Repositories'],['totalStars','Stars'],['totalForks','Forks'],['avgStars','Average stars']].map(([key,label]) => `<th scope="col" ${key !== 'language' ? 'class="number"' : ''} data-sort-column="${key}"><button class="table-sort" data-language-sort="${key}">${label}<span aria-hidden="true" class="sort-arrow">↕</span></button></th>`).join('')}</tr></thead><tbody id="languageTable"></tbody></table></div></section>`;
+  const select = document.getElementById('languageSort');
+  const directionButton = document.getElementById('languageDirection');
+  let key = ctx.url.searchParams.get('sort');
+  if (!Object.hasOwn(languageSorts, key)) key = 'repos';
+  let direction = ctx.url.searchParams.get('dir') === 'asc' ? 'asc' : 'desc';
+  const renderLanguages = () => {
+    select.value = key;
+    const ascending = direction === 'asc';
+    directionButton.textContent = ascending ? '↑ Ascending' : '↓ Descending';
+    directionButton.setAttribute('aria-label', ascending ? 'Sort descending' : 'Sort ascending');
+    document.getElementById('languageSortStatus').textContent = `Ordered by ${languageSorts[key].toLowerCase()} · ${ascending ? 'ascending' : 'descending'} · missing values last.`;
+    const maxRepos = Math.max(1, ...languages.map(row => row.repos));
+    document.getElementById('languageTable').innerHTML = sortLanguageRows(languages, key, direction).map(row => `<tr data-language="${e(row.language)}"><td>${language(row.language)}<span class="language-share" aria-hidden="true"><span style="width:${Math.max(0, row.repos / maxRepos * 100)}%"></span></span></td><td class="number">${number(row.repos)}</td><td class="number" data-metric="stars">${number(row.totalStars)}</td><td class="number" data-metric="forks">${number(row.totalForks)}</td><td class="number">${number(row.avgStars)}</td></tr>`).join('') || '<tr><td colspan="5">Language data appears after the first collection.</td></tr>';
+    for (const th of ctx.main.querySelectorAll('[data-sort-column]')) {
+      const active = th.dataset.sortColumn === key;
+      if (active) th.setAttribute('aria-sort', ascending ? 'ascending' : 'descending'); else th.removeAttribute('aria-sort');
+      th.querySelector('.sort-arrow').textContent = active ? ascending ? '↑' : '↓' : '↕';
+    }
+    const url = new URL(location.href);
+    key === 'repos' ? url.searchParams.delete('sort') : url.searchParams.set('sort', key);
+    direction === 'desc' ? url.searchParams.delete('dir') : url.searchParams.set('dir', direction);
+    history.replaceState(null, '', url);
+  };
+  select.addEventListener('change', () => { key = select.value; direction = key === 'language' ? 'asc' : 'desc'; renderLanguages(); });
+  directionButton.addEventListener('click', () => { direction = direction === 'asc' ? 'desc' : 'asc'; renderLanguages(); });
+  for (const button of ctx.main.querySelectorAll('[data-language-sort]')) button.addEventListener('click', () => {
+    const nextKey = button.dataset.languageSort;
+    direction = nextKey === key ? direction === 'asc' ? 'desc' : 'asc' : nextKey === 'language' ? 'asc' : 'desc';
+    key = nextKey; renderLanguages();
+  });
+  renderLanguages();
   for (const key of ['monthlyStars', 'monthlyForks', 'yearlyStars', 'yearlyForks']) chart(key + 'Chart', data[key]);
 }
 

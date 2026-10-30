@@ -54,6 +54,10 @@ served locally. No build step, CSS CDN, font CDN or chart mock is required.
 - `public/design.css`: layered reset/tokens/layout/components/responsive rules.
 - `public/cards.css`: card readability, visible statistic labels, exact counts, full
   descriptions, period-specific gains, truthful ranking context and responsive list view.
+- `public/premium.css`: shared neutral visual tokens, restrained frosted navigation,
+  editorial typography, semantic metric colors and responsive chart/table presentation.
+  Loaded after structural styles; preserves the shared card subgrid. Local assets only,
+  opaque glass fallback, reduced-transparency preference and visible keyboard focus.
 - `scripts/qa-check.js`: read-only live API checks and optional isolated regressions,
   with bounded latest/previous JSON reports in `.amani/qa/`.
 
@@ -69,7 +73,7 @@ current application modules ship; unused prototype templates are not included.
 | `/yearly` | verified first/last observations in last 365 days | observed growth, explicitly partial coverage; needs two observation dates |
 | `/github-trending` | all repositories | searchable/sortable full collection |
 | `/repositories/:owner/:repo` | normalized metadata, trusted history, rankings | external GitHub link, real history chart/table, topics, period links |
-| `/stats` | metadata totals, languages, bucketed history | four real charts, table; no estimates for missing years |
+| `/stats` | metadata totals, languages, bucketed history | four real charts; language table sorts five fields in either direction, URL/reload persistence, keyboard headings, unknown values last; no estimates for missing years |
 | `/insights` | computed daily growth, star totals, creation dates, languages | navigable repository cards; no invented editorial claims |
 | `/live` | latest daily collection | timestamped source-labeled feed, reload, 60s read refresh |
 | `/topics` | actual repository topic metadata | topic filtering and real counts |

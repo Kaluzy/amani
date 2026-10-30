@@ -27,7 +27,7 @@ try {
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${width} ${route} overflow`);
       if (route === 'stats/') assert.equal(await page.evaluate(() => Object.keys(Chart.instances).length), 4);
       for (const href of await page.$$eval('a[href]', elements => elements.map(element => element.href))) if (href.startsWith(base)) links.add(href);
-      if ([390,1440].includes(width) && ['', 'daily/', 'guide/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1) : 'overview'}-${width}.png`), fullPage: true });
+      if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1) : 'overview'}-${width}.png`), fullPage: true });
       if (width === 1440 && ['daily/','weekly/','monthly/'].includes(route)) {
         const groups = await page.$$eval('.repo-card', cards => {
           const rows = new Map();
@@ -39,6 +39,16 @@ try {
       combinations++;
     }
     console.log(`PASS ${width}px: ${routes.length} routes, charts, no overflow`);
+  }
+  await page.goto(new URL('stats/', base).href, { waitUntil: 'networkidle0' });
+  for (const key of ['repos','totalStars','totalForks','avgStars','language']) {
+    await page.select('#languageSort', key);
+    assert.equal(await page.$eval('th[aria-sort]', element=>element.dataset.sortColumn), key);
+    await page.click('#languageDirection');
+    const direction = await page.$eval('th[aria-sort]', element=>element.getAttribute('aria-sort'));
+    await page.reload({ waitUntil: 'networkidle0' });
+    assert.equal(await page.$eval('#languageSort', element=>element.value), key);
+    assert.equal(await page.$eval('th[aria-sort]', element=>element.getAttribute('aria-sort')), direction);
   }
   await page.setViewport({ width: 1440, height: 1000 });
   await page.goto(new URL('daily/', base).href, { waitUntil: 'networkidle0' });

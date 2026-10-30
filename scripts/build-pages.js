@@ -16,7 +16,7 @@ if(new URL(siteOrigin).origin !== siteOrigin || !siteOrigin.startsWith('https://
 const repository=process.env.PAGES_REPOSITORY || 'Kaluzy/amani';
 if(!/^[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error('Invalid Pages repository');
 const save=async(file,body)=>{const dest=path.join(output,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body);};
-const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','design.css','cards.css','favicon.svg'];
+const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','design.css','cards.css','premium.css','favicon.svg'];
 const sources=new Map(await Promise.all(assets.map(async asset=>[asset,await readFile(path.join(root,'public',asset),'utf8')])));
 const revision=(process.env.GITHUB_SHA || createHash('sha256').update([...sources.values()].join('\n')+await readFile(path.join(root,'package-lock.json'),'utf8')).digest('hex')).slice(0,12);
 const server=createApp().listen(0,'127.0.0.1');await once(server,'listening');
