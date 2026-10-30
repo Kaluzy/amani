@@ -54,8 +54,10 @@ served locally. No build step, CSS CDN, font CDN or chart mock is required.
 - `public/design.css`: layered reset/tokens/layout/components/responsive rules.
 - `public/cards.css`: card readability, visible statistic labels, exact counts, full
   descriptions, period-specific gains, truthful ranking context and responsive list view.
-- `public/premium.css`: shared ivory/charcoal/copper visual system, dark editorial
-  navigation, sculptural discovery hero, glass real-data feature and chart/table styling.
+- `public/premium.css`: shared translucent glass system over a fixed rose/plum/amber
+  ambient background; light frosted navigation, sans-serif hero, reflective borders,
+  readable semantic metric tints and consistent chart/table surfaces. Native CSS
+  backdrop filtering; not liquidGL GPU refraction. No added framework/runtime.
   `favicon.svg` is the same custom Amani geometric A used by the brand and hero.
   Hero feature is a real current Daily repository, never a fabricated recommendation.
   Loaded after structural styles; preserves the shared card subgrid. Local assets only,

@@ -124,6 +124,23 @@ test('QA cards and navigation work in the real browser',{timeout:90000},async t=
     assert.match(page.url(),/\/repositories\/example\/clarity$/);
     await page.close();
   });
+  await t.test('glass system has translucent surfaces, sans-serif type and an opaque accessibility fallback',async()=>{
+    const page=await browser.newPage();await page.setViewport({width:1440,height:1000});
+    await page.goto(origin+'/',{waitUntil:'networkidle0'});
+    const surfaces=await page.$$eval('.sidebar,.discovery-hero,.metric,.repo-card',els=>els.map(el=>({blur:getComputedStyle(el).backdropFilter,background:getComputedStyle(el).backgroundImage})));
+    assert.ok(surfaces.length>5);
+    for(const surface of surfaces){assert.match(surface.blur,/blur/);assert.match(surface.background,/rgba/);}
+    assert.ok(await page.$eval('body',el=>getComputedStyle(el).backgroundImage.includes('radial-gradient')));
+    assert.doesNotMatch(await page.$eval('.hero-copy em',el=>getComputedStyle(el).fontFamily),/Georgia|Times/);
+    const cdp=await page.createCDPSession();
+    await cdp.send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-transparency',value:'reduce'}]});
+    assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-transparency: reduce)').matches),true);
+    for(const selector of ['.sidebar','.repo-card','.hero-feature']){
+      assert.equal(await page.$eval(selector,el=>getComputedStyle(el).backdropFilter),'none');
+      assert.equal(await page.$eval(selector,el=>getComputedStyle(el).backgroundColor),'rgb(249, 247, 252)');
+    }
+    await page.close();
+  });
   await t.test('statistics sorting is keyboard accessible, escaped, and survives reload',async()=>{
     const page=await browser.newPage();
     await page.setRequestInterception(true);
