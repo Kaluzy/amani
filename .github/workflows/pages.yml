@@ -45,6 +45,8 @@ jobs:
       - name: Collect fresh public data
         run: npm run refresh
       - name: Build static pages and public data
+        env:
+          AMANI_GA4_ID: ${{ vars.AMANI_GA4_ID }}
         run: |
           npm run build:pages
           npm run verify:dist

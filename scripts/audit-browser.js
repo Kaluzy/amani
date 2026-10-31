@@ -11,7 +11,7 @@ const get = async file => { const response = await fetch(new URL(file, base)); a
 const repos = await get('data/repos.json'), topics = await get('data/topics.json');
 const featured = repos.find(repo => repo.full_name === 'obra/superpowers') || repos[0];
 const profile = 'repositories/' + featured.full_name + '/';
-const routes = ['', 'daily/','weekly/','monthly/','yearly/','stats/','insights/','live/','topics/','github-trending/','workbench/','guide/','submit/','about/','privacy/','terms/','contact/',profile,'topics/'+encodeURIComponent(topics[0].slug)+'/'];
+const routes = ['', 'daily/','weekly/','monthly/','yearly/','stats/','insights/','live/','topics/','github-trending/','workbench/','guide/','discover/','community/','submit/','about/','privacy/','terms/','contact/',profile,'topics/'+encodeURIComponent(topics[0].slug)+'/'];
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
 const errors = [], failed = [], transientRetries = [], links = new Set(); let combinations = 0;
 try {
@@ -26,7 +26,7 @@ try {
       assert.equal(await page.$$eval('.error-state', elements => elements.length), 0, `${width} ${route}`);
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), `${width} ${route} overflow`);
       assert.ok(await page.$$eval('.metric-value', elements => elements.every(element=>element.scrollWidth<=element.clientWidth+1)), `${width} ${route} metric value overflow`);
-      assert.ok(await page.$eval('.brand-mark', image=>image.complete && image.naturalWidth>0), 'Amani vector mark loads');
+      assert.ok(await page.$eval('.brand-mark', image=>image.complete && image.naturalWidth>0), 'Supplied Amani logo loads');
       if (route === 'stats/') assert.equal(await page.evaluate(() => Object.keys(Chart.instances).length), 4);
       for (const href of await page.$$eval('a[href]', elements => elements.map(element => element.href))) if (href.startsWith(base)) links.add(href);
       if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1) : 'overview'}-${width}.png`), fullPage: true });

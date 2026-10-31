@@ -1,5 +1,15 @@
 # Amani release review — 2026-10-29
 
+## Follow-up — 2026-10-30
+
+The supplied gold AMANI logo, neutral/gold glass styling, project finder,
+community search links and public RSS feeds supersede the earlier visual scope.
+Consent-gated GA4 support is prepared but remains unconfigured/off without an
+owner measurement ID and property review. Real Reddit/X ranking collection is
+not connected; approval/credentials/cost limits are still needed. No ad program,
+paid provider, email capture or hosting migration was activated. The revenue gates
+below still apply; feature completion is not commercial/IP/privacy clearance.
+
 ## Release scope
 
 An independent, free open-source field guide with public-source observations,

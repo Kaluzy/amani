@@ -7,7 +7,10 @@ shortlist, compare real signals and choose your next building block.
 - Read the original Amani field guide: attention is not a quality rating.
 - Explore timestamped Daily, Weekly and Monthly GitHub Trending collections,
   observed growth, repository profiles, language statistics and topics.
-- No ads, tracking scripts, paid placements or visitor accounts in this release.
+- Find projects with language/license/star/archived/saved filters and shareable searches.
+- Open Reddit/X discussion searches and subscribe to recorded collections through RSS.
+- No ads, paid placements or visitor accounts. Optional GA4 is off until an owner
+  configures it and a visitor consents; see [integration setup](INTEGRATIONS.md).
 
 Public website: https://kaluzy.github.io/amani/
 

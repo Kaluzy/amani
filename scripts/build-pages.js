@@ -16,26 +16,30 @@ if(new URL(siteOrigin).origin !== siteOrigin || !siteOrigin.startsWith('https://
 const repository=process.env.PAGES_REPOSITORY || 'Kaluzy/amani';
 if(!/^[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error('Invalid Pages repository');
 const save=async(file,body)=>{const dest=path.join(output,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body);};
-const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','design.css','cards.css','premium.css','favicon.svg'];
+const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','discovery.js','analytics.js','design.css','cards.css','premium.css'];
+const binaryAssets=['brand-logo.png'];
 const sources=new Map(await Promise.all(assets.map(async asset=>[asset,await readFile(path.join(root,'public',asset),'utf8')])));
-const revision=(process.env.GITHUB_SHA || createHash('sha256').update([...sources.values()].join('\n')+await readFile(path.join(root,'package-lock.json'),'utf8')).digest('hex')).slice(0,12);
+const revision=(process.env.GITHUB_SHA || createHash('sha256').update([...sources.values()].join('\n')+await readFile(path.join(root,'package-lock.json'),'utf8')).update(await readFile(path.join(root,'public/brand-logo.png'))).digest('hex')).slice(0,12);
+const measurementID=process.env.AMANI_GA4_ID || '';
+if(measurementID && !/^G-[A-Z0-9]{6,20}$/.test(measurementID)) throw new Error('AMANI_GA4_ID must be a public GA4 measurement ID, not a key or script');
 const server=createApp().listen(0,'127.0.0.1');await once(server,'listening');
 const origin=`http://127.0.0.1:${server.address().port}`;
 try{
   const get=async(endpoint)=>{const response=await fetch(origin+endpoint);if(!response.ok)throw new Error(`${endpoint}: ${response.status}`);return response.json();};
   const repos=await get('/api/repos');const topics=await get('/api/topics');
-  const routes=['/','/daily','/weekly','/monthly','/yearly','/stats','/insights','/live','/topics','/github-trending','/workbench','/guide','/submit','/about','/privacy','/terms','/contact',...repos.map(r=>'/repositories/'+r.full_name),...topics.map(t=>'/topics/'+encodeURIComponent(t.slug))];
+  const routes=['/','/daily','/weekly','/monthly','/yearly','/stats','/insights','/live','/topics','/github-trending','/workbench','/guide','/discover','/community','/submit','/about','/privacy','/terms','/contact',...repos.map(r=>'/repositories/'+r.full_name),...topics.map(t=>'/topics/'+encodeURIComponent(t.slug))];
   let shell=await readFile(path.join(root,'public/shell.html'),'utf8');
   shell=shell.replace('<head>',`<head>\n  <meta name="amani-base" content="${base}">\n  <meta name="amani-hosting" content="github-pages">\n  <meta name="amani-repository" content="https://github.com/${repository}">`)
     .replace(/(href|src)="\/(?!\/)/g,`$1="${base}/`)
     .replace('Find. Compare. Build.','Find. Compare. Build. · Public snapshots')
-    .replace(/(src|href)="(\/[^"?]+\.(?:js|css|svg))(?:\?[^\"]*)?"/g,`$1="$2?v=${revision}"`);
+    .replace('<meta name="amani-ga4" content="">',`<meta name="amani-ga4" content="${measurementID}">`)
+    .replace(/(src|href)="(\/[^"?]+\.(?:js|css|svg|png))(?:\?[^\"]*)?"/g,`$1="$2?v=${revision}"`);
   const escape=value=>String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const titles={'/':'Your open-source field guide','/daily':'Daily discoveries','/weekly':'Weekly discoveries','/monthly':'Monthly discoveries','/yearly':'Observed yearly growth','/stats':'Collection statistics','/insights':'Open-source signals','/live':'Latest recorded activity','/topics':'Browse topics','/github-trending':'Explore the collection','/workbench':'Your comparison workbench','/guide':'From interesting to useful: the Amani field guide','/submit':'Suggest a repository','/about':'Our methodology and data','/privacy':'Privacy','/terms':'Terms','/contact':'Contact'};
   const repoMap=new Map(repos.map(repo=>['/repositories/'+repo.full_name,repo]));
   for(const route of routes){
     const repo=repoMap.get(route);
-    const title=(titles[route] || (repo ? repo.full_name : 'Topic: '+decodeURIComponent(route.slice('/topics/'.length))))+' — Amani';
+    const title=(titles[route] || ({'/discover':'Find your next open-source tool','/community':'Community discovery'})[route] || (repo ? repo.full_name : 'Topic: '+decodeURIComponent(route.slice('/topics/'.length))))+' — Amani';
     const description=repo ? `Explore ${repo.full_name} on Amani. Compare public project signals, inspect the source, and save it to your workbench.` : 'Discover open-source projects, compare the evidence, and choose your next building block with Amani’s independent field guide.';
     const canonical=siteOrigin+base+(route==='/'?'/':route+'/');
     const page=shell.replace(/<title>.*?<\/title>/,`<title>${escape(title)}</title>`).replace(/<meta name="description" content="[^"]*">/,`<meta name="description" content="${escape(description)}">`)
@@ -48,13 +52,19 @@ try{
     const source=sources.get(asset);
     await save(asset,asset.endsWith('.js')?source.replace(/(\bfrom\s*['"])(\.\/[^'"?]+\.js)(['"])/g,`$1$2?v=${revision}$3`):source);
   }
+  for(const asset of binaryAssets) await copyFile(path.join(root,'public',asset),path.join(output,asset));
+  for(const period of ['daily','weekly','monthly']){
+    const rows=await get('/api/repos/'+period);
+    const items=rows.map(repo=>`<item><title>${escape(repo.full_name)}</title><link>${escape(siteOrigin+base+'/repositories/'+repo.full_name.split('/').map(encodeURIComponent).join('/')+'/')}</link><guid isPermaLink="false">${escape(period+':'+repo.full_name)}</guid><description>${escape((repo.description||'No public description recorded.')+' · '+period+' rank '+repo.rank+' · Collection: '+(repo.snapshot_at||'not recorded'))}</description></item>`).join('');
+    await save('feeds/'+period+'.xml',`<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Amani ${period} discoveries</title><link>${siteOrigin+base}/${period}/</link><description>Latest recorded GitHub Trending collection. Rankings are not endorsements.</description><lastBuildDate>${new Date().toUTCString()}</lastBuildDate>${items}</channel></rss>`);
+  }
   await mkdir(path.join(output,'vendor'),{recursive:true});
   await copyFile(path.join(root,'node_modules/chart.js/dist/chart.umd.js'),path.join(output,'vendor/chart.js'));
   await copyFile(path.join(root,'node_modules/chart.js/LICENSE.md'),path.join(output,'vendor/chart.LICENSE.md'));
   const endpoints=['/api/status','/api/repos','/api/repos/daily','/api/repos/weekly','/api/repos/monthly','/api/repos/yearly','/api/stats','/api/stats/languages','/api/stats/charts','/api/insights','/api/live-mentions','/api/topics',...repos.map(r=>'/api/repos/detail/'+r.full_name),...topics.map(t=>'/api/topics/'+encodeURIComponent(t.slug)+'/repos')];
   for(const endpoint of endpoints) await save('data'+decodeURIComponent(endpoint.slice(4))+'.json',JSON.stringify(await get(endpoint)));
   await exportPublicSeed(path.join(output,'data/public-seed.json'));
-  await save('release-manifest.json',JSON.stringify({routes,endpoints,assets,base,origin:siteOrigin}));
+  await save('release-manifest.json',JSON.stringify({routes,endpoints,assets:[...assets,...binaryAssets],feeds:['daily','weekly','monthly'],base,origin:siteOrigin}));
   await save('build.json',JSON.stringify({built_at:new Date().toISOString(),commit:process.env.GITHUB_SHA || null,assetRevision:revision,version:'3.1.0',repository,routes:routes.length,repositories:repos.length,base,hosting:'github-pages'}));
   console.log(`Built ${routes.length} routes and ${endpoints.length} public JSON endpoints in ${output}`);
 }finally{await new Promise(resolve=>server.close(resolve));db.close();}

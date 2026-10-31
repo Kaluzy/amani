@@ -30,10 +30,11 @@ export async function checkPublic(baseURL = 'https://kaluzy.github.io/amani/', {
   assert.ok(Array.isArray((await get('data/insights.json')).most_starred));
   const repo = repos[0]; assert.equal((await get('data/repos/detail/' + repo.full_name + '.json')).full_name, repo.full_name);
   if (topics.length) assert.ok((await get('data/topics/' + encodeURIComponent(topics[0].slug) + '/repos.json')).length);
-  for (const file of ['', 'guide/', 'workbench/', 'submit/', 'repositories/' + repo.full_name + '/']) {
+  for (const file of ['', 'guide/', 'workbench/', 'discover/', 'community/', 'submit/', 'repositories/' + repo.full_name + '/']) {
     const html = await get(file, false); assert.match(html, /id="mainContent"/); assert.match(html, /Content-Security-Policy/);
   }
   assert.match(await get('sitemap.xml', false), /<urlset/);
+  for(const period of ['daily','weekly','monthly'])assert.match(await get('feeds/'+period+'.xml',false),/<rss version="2.0">/);
   console.log(JSON.stringify({ result: 'pass', checks: checks.length, transientRetries, build, checkedAt: new Date().toISOString() }, null, 2));
   return { checks, build, transientRetries };
 }

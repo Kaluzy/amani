@@ -24,6 +24,8 @@ test('GitHub Pages export works without a backend under its project base path',{
   assert.ok(!readFileSync(seed,'utf8').includes('private/do-not-publish'));
   run('scripts/build-pages.js');
   run('scripts/verify-dist.js');
+  assert.ok(readFileSync(path.join(output,'brand-logo.png')).equals(readFileSync(new URL('../public/brand-logo.png',import.meta.url))));
+  assert.match(readFileSync(path.join(output,'feeds/daily.xml'),'utf8'),/<rss version="2.0">/);
   const privateFile=path.join(output,'.env');writeFileSync(privateFile,'TEST_ONLY_PRIVATE_SENTINEL=do-not-publish');
   const rejected=spawnSync(process.execPath,['scripts/verify-dist.js'],{env:{...process.env,PAGES_OUTPUT:output},encoding:'utf8'});
   assert.notEqual(rejected.status,0,'A private file must block publication');unlinkSync(privateFile);
@@ -38,7 +40,7 @@ test('GitHub Pages export works without a backend under its project base path',{
   const page=await browser.newPage();const errors=[],bad=[];page.on('pageerror',e=>errors.push(e.message));page.on('response',r=>{if(r.status()>=400)bad.push(r.url());});
   for(const width of [390,768,1440]){
     await page.setViewport({width,height:1000});
-    for(const route of ['/','/daily/','/weekly/','/monthly/','/yearly/','/stats/','/insights/','/topics/','/topics/testing/','/github-trending/','/repositories/example/pages/','/guide/','/workbench/','/submit/','/about/','/privacy/','/contact/']){
+    for(const route of ['/','/daily/','/weekly/','/monthly/','/yearly/','/stats/','/insights/','/topics/','/topics/testing/','/github-trending/','/repositories/example/pages/','/guide/','/workbench/','/discover/','/community/','/submit/','/about/','/privacy/','/contact/']){
       await page.goto(origin+'/amani'+route,{waitUntil:'networkidle0'});await page.waitForSelector('#mainContent:not([aria-busy])');
       assert.equal(await page.$$eval('.error-state',els=>els.length),0,route);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${width} ${route}`);

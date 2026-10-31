@@ -110,15 +110,16 @@ test('QA cards and navigation work in the real browser',{timeout:90000},async t=
       assert.ok(await page.$eval('.hero-mark',img=>img.complete&&img.naturalWidth>0));
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`hero ${width}px`);
       assert.equal(await page.$eval('.hero-feature strong',el=>el.textContent),varied[0].full_name);
-      assert.equal(await page.$$eval('#mainNav .nav-icon svg',els=>els.length),12);
+      assert.equal(await page.$$eval('#mainNav .nav-icon svg',els=>els.length),14);
       assert.ok(await page.$eval('.hero-copy',el=>el.scrollWidth<=el.clientWidth+1),`hero copy ${width}px`);
+      if(width<700)assert.ok(await page.evaluate(()=>document.querySelector('.hero-mark').getBoundingClientRect().bottom+8<=document.querySelector('.hero-feature').getBoundingClientRect().top),'full supplied wordmark never overlaps feature text');
       assert.ok(await page.$$eval('.metric-value',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`overview exact totals ${width}px`);
       await page.goto(origin+'/stats',{waitUntil:'networkidle0'});
       assert.ok(await page.$$eval('.metric-value',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`statistics exact totals ${width}px`);
     }
     await page.goto(origin+'/',{waitUntil:'networkidle0'});
     await page.focus('.hero-primary');await page.keyboard.press('Enter');
-    await page.waitForSelector('#sortSelect');assert.match(page.url(),/\/daily$/);
+    await page.waitForSelector('#finderQuery');assert.match(page.url(),/\/discover$/);
     await page.goto(origin+'/',{waitUntil:'networkidle0'});
     await page.click('.hero-feature');await page.waitForSelector('.detail-heading');
     assert.match(page.url(),/\/repositories\/example\/clarity$/);
@@ -137,7 +138,7 @@ test('QA cards and navigation work in the real browser',{timeout:90000},async t=
     assert.equal(await page.evaluate(()=>matchMedia('(prefers-reduced-transparency: reduce)').matches),true);
     for(const selector of ['.sidebar','.repo-card','.hero-feature']){
       assert.equal(await page.$eval(selector,el=>getComputedStyle(el).backdropFilter),'none');
-      assert.equal(await page.$eval(selector,el=>getComputedStyle(el).backgroundColor),'rgb(249, 247, 252)');
+      assert.equal(await page.$eval(selector,el=>getComputedStyle(el).backgroundColor),'rgb(250, 249, 245)');
     }
     await page.close();
   });

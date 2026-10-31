@@ -4,11 +4,13 @@ import { routeURL, sitePath, prepareLinks } from './deployment.js';
 import { workbench } from './workbench.js';
 import { guide } from './guide.js';
 import { savedNames, setSaved, refreshSaveButtons } from './shortlist.js';
+import { discover, community } from './discovery.js';
+import { initAnalytics, analyticsPageView } from './analytics.js';
 
 const navigation = [
   ['/', 'Overview', '◫'], ['/daily', 'Daily trending', '↗'], ['/weekly', 'Weekly trending', '▥'], ['/monthly', 'Monthly trending', '▤'], ['/yearly', 'Yearly growth', '◷'],
   ['/stats', 'Statistics', '▥'], ['/insights', 'Insights', '✧'], ['/live', 'Activity', '⌁'], ['/topics', 'Topics', '⊞'], ['/github-trending', 'All repositories', '⌘'],
-  ['/workbench', 'My workbench', '◇'], ['/guide', 'Field guide', '⌁'],
+  ['/workbench', 'My workbench', '◇'], ['/guide', 'Field guide', '⌁'], ['/discover', 'Project finder', '⌕'], ['/community', 'Community & RSS', '⌁'],
 ];
 const navPaths = {
   '/': '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -23,6 +25,8 @@ const navPaths = {
   '/github-trending': '<path d="M8 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3M8 4h8v5H8Z"/>',
   '/workbench': '<path d="M4 8h16v12H4Zm4 0V4h8v4M4 13h16m-8-2v4"/>',
   '/guide': '<path d="M12 5C8 2 3 4 3 4v15s5-2 9 1c4-3 9-1 9-1V4s-5-2-9 1Zm0 0v15"/>',
+  '/discover': '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6m-3-3h6"/>',
+  '/community': '<path d="M21 11a8 8 0 0 1-8 8H5l-3 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8ZM7 10h10m-10 4h6"/>',
 };
 const navIcon = path => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${navPaths[path]}</svg>`;
 const main = document.getElementById('mainContent');
@@ -101,6 +105,8 @@ async function render() {
     if (currentPath === '/') await repositories(ctx, { overview: true });
     else if (currentPath === '/workbench') await workbench(ctx);
     else if (currentPath === '/guide') guide(ctx);
+    else if (currentPath === '/discover') await discover(ctx);
+    else if (currentPath === '/community') community(ctx);
     else if (['daily','weekly','monthly','yearly'].includes(parts[0]) && parts.length === 1) await repositories(ctx, { period: parts[0] });
     else if (currentPath === '/github-trending') await repositories(ctx, { period: 'all' });
     else if (currentPath === '/stats') await statistics(ctx);
@@ -123,6 +129,7 @@ async function render() {
     if (!canonical.pathname.endsWith('/')) canonical.pathname += '/';
     document.querySelector('link[rel="canonical"]')?.setAttribute('href', canonical.href);
     document.querySelector('meta[property="og:url"]')?.setAttribute('content', canonical.href);
+    analyticsPageView();
   } }
 }
 export function navigate(url) { history.pushState(null, '', sitePath(url)); closeMenu(); window.scrollTo(0, 0); render(); main.focus({ preventScroll: true }); }
@@ -138,4 +145,4 @@ document.getElementById('searchForm').addEventListener('submit', event => {
 let debounce;
 document.getElementById('globalSearch').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(() => searchHandler?.(), 120); });
 window.addEventListener('popstate', () => { closeMenu(); render(); });
-render();
+initAnalytics();render();

@@ -12,8 +12,9 @@ export async function verifyDist(output = process.env.PAGES_OUTPUT || 'dist') {
   assert.equal(xml('url').length, manifest.routes.length - 1, 'Every indexable route is in the sitemap');
   const endpoints = new Map();
   for (const asset of manifest.assets) {
-    const source = await read(asset);
+    assert.ok((await stat(path.join(root,asset))).isFile(), `Missing asset ${asset}`);
     if (!asset.endsWith('.js')) continue;
+    const source = await read(asset);
     assert.ok(!new RegExp(['trend','shift'].join(''),'i').test(source), 'Legacy branding cannot ship in application modules');
     for (const match of source.matchAll(/\bfrom\s*['"]\.\/([^'"]+)['"]/g)) {
       const [name, revision] = match[1].split('?v=');
@@ -71,10 +72,19 @@ export async function verifyDist(output = process.env.PAGES_OUTPUT || 'dist') {
       const value = $(item).attr('src') || $(item).attr('href');
       if (!value?.startsWith(manifest.base + '/')) continue;
       const target = decodeURIComponent(value.slice(manifest.base.length + 1).split('?')[0]);
-      if (/\.(?:js|css|svg)$/.test(target)) assert.ok(value.endsWith('?v='+build.assetRevision), 'Static assets must avoid mixed-release browser caches');
+      if (/\.(?:js|css|svg|png)$/.test(target)) assert.ok(value.endsWith('?v='+build.assetRevision), 'Static assets must avoid mixed-release browser caches');
       assert.ok((await stat(path.join(root, target))).isFile(), `${route}: ${target}`);
     }
     assert.ok(!new RegExp(['trend','shift'].join(''),'i').test(html), 'Legacy branding cannot ship in HTML');
+  }
+  for(const period of manifest.feeds || []){
+    const $=cheerio.load(await read('feeds/'+period+'.xml'),{xmlMode:true});
+    const rows=endpoints.get('/api/repos/'+period);
+    assert.equal($('item').length,rows.length,'Feed matches the actual period collection');
+    $('item').each((index,item)=>{
+      assert.equal($(item).find('title').text(),rows[index].full_name);
+      assert.ok($(item).find('link').text().startsWith(manifest.origin+manifest.base+'/repositories/'));
+    });
   }
   const walk = async directory => {
     for (const entry of await readdir(directory, { withFileTypes: true })) {

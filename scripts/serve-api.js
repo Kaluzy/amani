@@ -114,7 +114,7 @@ export function createApp() {
   aliases['/repo.html'] = '/github-trending';
   aliases['/topic.html'] = '/topics';
   app.get(Object.keys(aliases), (req, res) => res.redirect(302, aliases[req.path]));
-  const routes = ['/', '/daily', '/weekly', '/monthly', '/yearly', '/stats', '/insights', '/live', '/topics', '/topics/:slug', '/github-trending', '/repositories/:owner/:repo', '/workbench', '/guide', '/submit', '/about', '/privacy', '/terms', '/contact'];
+  const routes = ['/', '/daily', '/weekly', '/monthly', '/yearly', '/stats', '/insights', '/live', '/topics', '/topics/:slug', '/github-trending', '/repositories/:owner/:repo', '/workbench', '/guide', '/discover', '/community', '/submit', '/about', '/privacy', '/terms', '/contact'];
   app.get(routes, (req, res) => { res.set('Cache-Control', 'no-cache'); res.sendFile(path.join(root, 'public/shell.html')); });
   app.use(express.static(path.join(root, 'public'), { index: false, maxAge: 0 }));
   app.use((req, res) => req.path.startsWith('/api/') ? res.status(404).json({ error: 'Endpoint not found' }) : res.status(404).sendFile(path.join(root, 'public/shell.html')));

@@ -6,7 +6,8 @@
 `public/workbench.js` compares up to four projects from current public metadata;
 shared links contain names only and do not save another visitor’s selections.
 `public/guide.js` is original evidence-first evaluation guidance. No user accounts,
-ad code, tracking or paid placements are implemented. Storage failures remain
+ad code or paid placements are implemented. Optional analytics remains off without
+an owner-configured ID and explicit visitor consent. Storage failures remain
 usable in memory until reload/close. Privacy copy describes the actual behavior.
 
 All exports pass `scripts/verify-dist.js`: every route, JSON endpoint, repository/
@@ -51,14 +52,20 @@ served locally. No build step, CSS CDN, font CDN or chart mock is required.
 - `public/client.js`: navigation lifecycle, cancellation, mobile menu and global search.
 - `public/pages.js`: page views and interactions; real local Chart.js rendering.
 - `public/ui.js`: escaped components, API error handling and consistent formatting.
+- `public/discovery.js`: catalog-backed project finder, safe external community
+  search links and public RSS discovery. Social rankings remain explicitly unconnected.
+- `public/analytics.js`: optional GA4 adapter; no tag without a configured ID and
+  explicit consent. Manual SPA events strip query/fragment data; privacy signals
+  disable collection. `INTEGRATIONS.md` documents required property configuration.
 - `public/design.css`: layered reset/tokens/layout/components/responsive rules.
 - `public/cards.css`: card readability, visible statistic labels, exact counts, full
   descriptions, period-specific gains, truthful ranking context and responsive list view.
-- `public/premium.css`: shared translucent glass system over a fixed rose/plum/amber
-  ambient background; light frosted navigation, sans-serif hero, reflective borders,
+- `public/premium.css`: restrained neutral/gold glass system with light frosted
+  navigation, sans-serif hero, reflective borders and the supplied gold branding;
   readable semantic metric tints and consistent chart/table surfaces. Native CSS
   backdrop filtering; not liquidGL GPU refraction. No added framework/runtime.
-  `favicon.svg` is the same custom Amani geometric A used by the brand and hero.
+  `brand-logo.png` is the user's downloaded gold artwork, copied without image edits;
+  the favicon, navigation, mobile brand and hero use this same versioned asset.
   Hero feature is a real current Daily repository, never a fabricated recommendation.
   Loaded after structural styles; preserves the shared card subgrid. Local assets only,
   opaque glass fallback, reduced-transparency preference and visible keyboard focus.
@@ -84,12 +91,20 @@ current application modules ship; unused prototype templates are not included.
 | `/topics/:slug` | repositories containing exact topic | shared repository listing controls |
 | `/workbench` | current catalog + browser-only saved names | shortlist, compare up to four, share public names; storage fallback |
 | `/guide` | original local editorial content | evidence-first project evaluation guidance |
+| `/discover` | current public catalog | advanced language/license/stars/archive/saved filters, sorts, pagination, URL sharing |
+| `/community` | visitor-entered query; no social API | encoded Reddit/X search links, honest integration status, RSS subscription links |
 | `/submit` | GitHub Issues on Pages; POST `/api/submissions` locally | clear public suggestion flow; native local validation/persistence |
 | `/about`, `/privacy`, `/terms`, `/contact` | local explanatory content | working navigation with no dummy links |
 
 All asynchronous pages have loading, empty and retry states. Unknown routes return
 HTTP 404 with a navigable shell; unknown repositories return a useful error. A page
 returning 200 is not evidence that it has usable data or a correct layout.
+
+The static builder exports three RSS feeds from the exact public period collections.
+Binary logo assets are copied byte-for-byte and participate in revision hashing.
+`AMANI_GA4_ID` is an optional public Actions variable; unset means no analytics tag.
+The GA4 property must disable automatic Enhanced Measurement before activation so
+only sanitized manual events are sent. No paid provider or social account is provisioned.
 
 ## Data integrity and provenance
 
