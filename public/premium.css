@@ -233,7 +233,20 @@ th[aria-sort],.sort-arrow { color:#8b6b30; }
 .comparison-table small { font-size:11px; color:var(--muted); }
 .status-table caption { text-align:left; padding-block:14px; font-size:13px; color:var(--muted); }
 @media(max-width:1100px) { .collection-grid { grid-template-columns:1fr; }.collection-card { gap:12px; } }
-@media(max-width:600px) { .decision-facts { grid-template-columns:1fr; }.collection-section .section-heading { flex-wrap:wrap; gap:16px; }.guide-actions .button { white-space:normal; }.status-table { min-width:540px; } }
+@media(max-width:600px) { .decision-facts { grid-template-columns:1fr; }.collection-section .section-heading { flex-wrap:wrap; gap:16px; }.guide-actions .button { white-space:normal; } }
+@media(max-width:600px) {
+  .status-table { display:block; min-width:0; width:100%; }
+  .status-table caption { display:block; width:100%; line-height:1.7; }
+  .status-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+  .status-table tbody { display:grid; gap:14px; }
+  .status-table tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .status-table th[scope="row"] { grid-column:1/-1; padding:0 0 10px; text-transform:capitalize; }
+  .status-table td { padding:8px 0; border:0; white-space:normal; min-width:0; }
+  .status-table td::before { content:attr(data-label); display:block; font-size:10px; color:var(--muted); margin-bottom:6px; }
+  .status-table td[data-label="Projects"] { order:1; }
+  .status-table td[data-label="Status"] { order:2; }
+  .status-table td[data-label="Collected (UTC)"] { order:3; grid-column:1/-1; overflow-wrap:anywhere; }
+}
 .footer-button { padding:0; border:0; background:transparent; color:inherit; font:inherit; }
 .finder-panel { margin-bottom:24px; }
 .finder-fields { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }

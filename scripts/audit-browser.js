@@ -28,6 +28,7 @@ try {
       assert.ok(await page.$$eval('.metric-value', elements => elements.every(element=>element.scrollWidth<=element.clientWidth+1)), `${width} ${route} metric value overflow`);
       assert.ok(await page.$eval('.brand-mark', image=>image.complete && image.naturalWidth>0), 'Supplied Amani logo loads');
       if (route === 'stats/') assert.equal(await page.evaluate(() => Object.keys(Chart.instances).length), 4);
+      if (route === 'status/' && width < 600) assert.ok(await page.$$eval('.status-table td', elements => elements.every(element => element.getBoundingClientRect().left >= 0 && element.getBoundingClientRect().right <= innerWidth)), 'Mobile freshness facts are visible without sideways scrolling');
       for (const href of await page.$$eval('a[href]', elements => elements.map(element => element.href))) if (href.startsWith(base)) links.add(href);
       if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/','collections/','collections/first-saas/','briefing/','status/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1).replaceAll('/','-') : 'overview'}-${width}.png`), fullPage: true });
       if (width === 1440 && ['daily/','weekly/','monthly/'].includes(route)) {
