@@ -11,7 +11,7 @@ const get = async file => { const response = await fetch(new URL(file, base)); a
 const repos = await get('data/repos.json'), topics = await get('data/topics.json');
 const featured = repos.find(repo => repo.full_name === 'obra/superpowers') || repos[0];
 const profile = 'repositories/' + featured.full_name + '/';
-const routes = ['', 'daily/','weekly/','monthly/','yearly/','stats/','insights/','live/','topics/','github-trending/','workbench/','guide/','discover/','community/','submit/','about/','privacy/','terms/','contact/',profile,'topics/'+encodeURIComponent(topics[0].slug)+'/'];
+const routes = ['', 'daily/','weekly/','monthly/','yearly/','stats/','insights/','live/','topics/','github-trending/','workbench/','guide/','discover/','community/','collections/','collections/self-hosted-essentials/','collections/first-saas/','collections/local-ai/','briefing/','status/','submit/','about/','privacy/','terms/','contact/',profile,...(topics.length ? ['topics/'+encodeURIComponent(topics[0].slug)+'/'] : [])];
 const browser = await puppeteer.launch({ headless: true, args: ['--no-sandbox','--disable-dev-shm-usage'] });
 const errors = [], failed = [], transientRetries = [], links = new Set(); let combinations = 0;
 try {
@@ -29,7 +29,7 @@ try {
       assert.ok(await page.$eval('.brand-mark', image=>image.complete && image.naturalWidth>0), 'Supplied Amani logo loads');
       if (route === 'stats/') assert.equal(await page.evaluate(() => Object.keys(Chart.instances).length), 4);
       for (const href of await page.$$eval('a[href]', elements => elements.map(element => element.href))) if (href.startsWith(base)) links.add(href);
-      if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1) : 'overview'}-${width}.png`), fullPage: true });
+      if ([390,1440].includes(width) && ['', 'daily/', 'guide/', 'stats/','collections/','collections/first-saas/','briefing/','status/'].includes(route)) await page.screenshot({ path: path.join(output, `${route ? route.slice(0,-1).replaceAll('/','-') : 'overview'}-${width}.png`), fullPage: true });
       if (width === 1440 && ['daily/','weekly/','monthly/'].includes(route)) {
         const groups = await page.$$eval('.repo-card', cards => {
           const rows = new Map();
@@ -70,6 +70,7 @@ try {
   await page.setViewport({ width: 390, height: 700 });
   await page.click('#menuToggle');
   await page.waitForFunction(() => document.getElementById('sidebar').classList.contains('open') && Math.abs(document.getElementById('sidebar').getBoundingClientRect().left) < 1);
+  await page.$eval('#moreNavigation', details => { details.open = true; });
   await page.locator('#mainNav a[href$="/guide"]').click(); await page.waitForSelector('.field-guide');
   assert.equal(await page.$eval('#menuToggle', element=>element.getAttribute('aria-expanded')),'false');
   for (const link of links) {

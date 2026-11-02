@@ -8,6 +8,7 @@
     "verify:dist": "node scripts/verify-dist.js",
     "qa:public": "node scripts/check-public.js",
     "qa:browser": "node scripts/audit-browser.js",
+    "qa:performance": "node scripts/performance-check.js",
     "fetch": "node scripts/scrape-trending.js all",
     "rank": "node scripts/rank-momentum.js",
     "stats": "node scripts/compute-stats.js",

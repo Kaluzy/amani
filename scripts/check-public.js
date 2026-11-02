@@ -30,7 +30,7 @@ export async function checkPublic(baseURL = 'https://kaluzy.github.io/amani/', {
   assert.ok(Array.isArray((await get('data/insights.json')).most_starred));
   const repo = repos[0]; assert.equal((await get('data/repos/detail/' + repo.full_name + '.json')).full_name, repo.full_name);
   if (topics.length) assert.ok((await get('data/topics/' + encodeURIComponent(topics[0].slug) + '/repos.json')).length);
-  for (const file of ['', 'guide/', 'workbench/', 'discover/', 'community/', 'submit/', 'repositories/' + repo.full_name + '/']) {
+  for (const file of ['', 'guide/', 'workbench/', 'discover/', 'community/', 'collections/', 'collections/self-hosted-essentials/', 'collections/first-saas/', 'collections/local-ai/', 'briefing/', 'status/', 'submit/', 'repositories/' + repo.full_name + '/']) {
     const html = await get(file, false); assert.match(html, /id="mainContent"/); assert.match(html, /Content-Security-Policy/);
   }
   assert.match(await get('sitemap.xml', false), /<urlset/);

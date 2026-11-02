@@ -6,11 +6,14 @@ import { guide } from './guide.js';
 import { savedNames, setSaved, refreshSaveButtons } from './shortlist.js';
 import { discover, community } from './discovery.js';
 import { initAnalytics, analyticsPageView } from './analytics.js';
+import { collections } from './collections.js';
+import { briefing } from './briefing.js';
+import { reliability } from './reliability.js';
+import { forgetBaseline } from './watchlist.js';
 
 const navigation = [
-  ['/', 'Overview', '◫'], ['/daily', 'Daily trending', '↗'], ['/weekly', 'Weekly trending', '▥'], ['/monthly', 'Monthly trending', '▤'], ['/yearly', 'Yearly growth', '◷'],
-  ['/stats', 'Statistics', '▥'], ['/insights', 'Insights', '✧'], ['/live', 'Activity', '⌁'], ['/topics', 'Topics', '⊞'], ['/github-trending', 'All repositories', '⌘'],
-  ['/workbench', 'My workbench', '◇'], ['/guide', 'Field guide', '⌁'], ['/discover', 'Project finder', '⌕'], ['/community', 'Community & RSS', '⌁'],
+  ['/', 'Overview'], ['/discover', 'Discover tools'], ['/collections', 'Decision guides'], ['/daily', 'Trending'], ['/workbench', 'Saved & compare'], ['/briefing', 'Weekly briefing'], ['/stats', 'Statistics'],
+  ['/weekly', 'Weekly trending'], ['/monthly', 'Monthly trending'], ['/yearly', 'Observed growth'], ['/insights', 'Insights'], ['/live', 'Activity'], ['/topics', 'Topics'], ['/github-trending', 'All repositories'], ['/guide', 'Field guide'], ['/community', 'Community & RSS'], ['/status', 'Data status'],
 ];
 const navPaths = {
   '/': '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
@@ -28,7 +31,7 @@ const navPaths = {
   '/discover': '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6M10 7v6m-3-3h6"/>',
   '/community': '<path d="M21 11a8 8 0 0 1-8 8H5l-3 3V11a8 8 0 0 1 8-8h3a8 8 0 0 1 8 8ZM7 10h10m-10 4h6"/>',
 };
-const navIcon = path => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${navPaths[path]}</svg>`;
+const navIcon = path => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${navPaths[path] || navPaths[path === '/collections' ? '/guide' : path === '/briefing' ? '/weekly' : '/stats']}</svg>`;
 const main = document.getElementById('mainContent');
 let activeController;
 let searchHandler;
@@ -36,19 +39,22 @@ let cleanup;
 let sequence = 0;
 const mobile = matchMedia('(max-width: 900px)');
 document.getElementById('sidebar').inert = mobile.matches;
-document.getElementById('mainNav').innerHTML = navigation.map(([url,label], index) => `${index === 5 ? '<div class="nav-separator"></div><p class="nav-label">DISCOVER MORE</p>' : ''}<a class="nav-link" data-nav href="${url}"><span class="nav-icon" aria-hidden="true">${navIcon(url)}</span>${label}${url === '/live' ? '<span class="nav-tag">FEED</span>' : ''}</a>`).join('');
+const navLinks = rows => rows.map(([url,label]) => `<a class="nav-link" data-nav href="${url}"><span class="nav-icon" aria-hidden="true">${navIcon(url)}</span>${label}</a>`).join('');
+document.getElementById('mainNav').innerHTML = navLinks(navigation.slice(0, 7)) + '<details class="nav-more" id="moreNavigation"><summary>More data & tools</summary>' + navLinks(navigation.slice(7)) + '</details>';
 const savedLink = document.querySelector('#mainNav a[href="/workbench"]');
 savedLink.insertAdjacentHTML('beforeend', '<span class="nav-tag" id="savedCount" aria-label="Saved repository count">0</span>');
 document.addEventListener('click', event => {
   const button = event.target.closest('[data-save-repo]');
   if (!button) return;
-  const result = setSaved(button.dataset.saveRepo, !savedNames().includes(button.dataset.saveRepo));
+  const saving = !savedNames().includes(button.dataset.saveRepo);
+  if (!saving) forgetBaseline(button.dataset.saveRepo);
+  const result = setSaved(button.dataset.saveRepo, saving);
   refreshSaveButtons();
   document.getElementById('announcements').textContent = result.message;
 });
 window.addEventListener('amani:saved-change', () => refreshSaveButtons());
 window.addEventListener('storage', event => {
-  if (event.key === null || event.key === 'amani:workbench:v1') window.dispatchEvent(new CustomEvent('amani:saved-change'));
+  if (event.key === null || ['amani:workbench:v1', 'amani:watchlist:v1'].includes(event.key)) window.dispatchEvent(new CustomEvent('amani:saved-change'));
 });
 function closeMenu() {
   const focusInMenu = document.getElementById('sidebar').contains(document.activeElement);
@@ -85,7 +91,8 @@ async function render() {
     document.getElementById('breadcrumb').textContent = 'Invalid address';
     return;
   }
-  const activePath = currentPath.startsWith('/topics/') ? '/topics' : currentPath.startsWith('/repositories/') ? '/github-trending' : currentPath;
+  const activePath = currentPath.startsWith('/collections/') ? '/collections' : currentPath.startsWith('/topics/') ? '/topics' : currentPath.startsWith('/repositories/') ? '/discover' : currentPath;
+  document.getElementById('moreNavigation').open = navigation.slice(7).some(([path]) => path === activePath);
   for (const link of document.querySelectorAll('#mainNav a')) {
     const active = routeURL(link.href).pathname === activePath;
     link.classList.toggle('active', active);
@@ -107,6 +114,9 @@ async function render() {
     else if (currentPath === '/guide') guide(ctx);
     else if (currentPath === '/discover') await discover(ctx);
     else if (currentPath === '/community') community(ctx);
+    else if (currentPath === '/collections' || (parts[0] === 'collections' && parts.length === 2)) await collections(ctx, parts[1]);
+    else if (currentPath === '/briefing') await briefing(ctx);
+    else if (currentPath === '/status') reliability(ctx);
     else if (['daily','weekly','monthly','yearly'].includes(parts[0]) && parts.length === 1) await repositories(ctx, { period: parts[0] });
     else if (currentPath === '/github-trending') await repositories(ctx, { period: 'all' });
     else if (currentPath === '/stats') await statistics(ctx);
@@ -119,6 +129,12 @@ async function render() {
     else if (['about','privacy','terms','contact'].includes(parts[0]) && parts.length === 1) information(ctx, parts[0]);
     else main.innerHTML = state('This path leads somewhere new.', 'The page you requested does not exist. Explore the collection to continue.');
     main.insertAdjacentHTML('afterbegin', freshnessNotice(status));
+    const updateFreshness = setInterval(() => {
+      if (id !== sequence || document.hidden) return;
+      main.querySelector('.freshness-notice')?.remove();
+      main.insertAdjacentHTML('afterbegin', freshnessNotice(status));
+    }, 60000);
+    activeController.signal.addEventListener('abort', () => clearInterval(updateFreshness), { once: true });
   } catch (error) {
     if (error.name === 'AbortError' || id !== sequence) return;
     main.innerHTML = state('We couldn’t load this page.', error.message, { error: true, retry: true });

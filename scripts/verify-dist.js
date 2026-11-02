@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import * as cheerio from 'cheerio';
+import { assertSourceHealth } from './source-health.js';
 
 export async function verifyDist(output = process.env.PAGES_OUTPUT || 'dist') {
   const root = path.resolve(output);
@@ -31,6 +32,7 @@ export async function verifyDist(output = process.env.PAGES_OUTPUT || 'dist') {
   assert.equal(new Set(repos.map(repo => repo.full_name)).size, repos.length);
   const names = new Set(repos.map(repo => repo.full_name));
   const status = endpoints.get('/api/status');
+  assertSourceHealth(status);
   assert.equal(status.metrics.totalRepos, repos.length, 'Published metrics match the complete catalog');
   const seed = JSON.parse(await read('data/public-seed.json'));
   assert.equal(seed.repositories.length, repos.length, 'Recovery seed matches the current release');

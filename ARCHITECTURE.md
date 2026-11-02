@@ -2,6 +2,32 @@
 
 ## Independent product layer
 
+November 2 usefulness release: seven primary navigation destinations; secondary
+data views remain accessible in a native keyboard-operable “More data & tools”
+disclosure. Existing routes and saved/shared URLs remain compatible.
+`editorial.js` owns three original decision guides and reviewed project notes;
+`collections.js` renders the same guide markup in the browser and static HTML.
+Notes distinguish fit/setup opinions from recorded facts and link to primary README
+sources. Missing catalog entries receive no invented license, score or totals.
+`briefing.js` uses the real latest weekly collection (top five), not fabricated
+editorial rankings or a calendar-week archive, with existing weekly RSS subscription.
+`watchlist.js` validates browser-local check-in baselines for at most 24 saved names;
+workbench displays comparable star/fork deltas and archive changes since check-in.
+No background polling, email, push, account or server-side visitor storage is added.
+Unsave/clear removes baselines; blocked storage falls back in memory.
+Comparison rows link to README/license/commits/releases/issues, label metadata dates
+as not commit dates, and expose editorial setup guidance only for reviewed projects.
+
+`reliability.js` serves `/status` with actual collection ages and workflow links.
+`scripts/source-health.js` blocks export/publication of missing, future, invalid or
+>3h-old source collections. Workflow retries transient source GET failures, not
+malformed collections. GitHub schedule delay remains outside application control.
+Client GETs have one bounded transient retry and existing abort/timeout handling.
+Chart.js is loaded locally through `chart-loader.js` only on stats/detail pages.
+`qa:performance` enforces unique decoded homepage asset and network-transfer budgets and reports cold-browser
+lab LCP/CLS, not field measurements. `USER-TESTING.md` provides the actual five-user
+test protocol; no real participant sessions have been claimed. Analytics stays off.
+
 `public/shortlist.js` validates and bounds browser-only saved public names.
 `public/workbench.js` compares up to four projects from current public metadata;
 shared links contain names only and do not save another visitor’s selections.

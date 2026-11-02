@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import db, { upsertRepo } from '../src/lib/database.js';
 import { collect } from '../src/lib/catalog.js';
+import { checkedFetch } from './http-check.js';
 
 const root = new URL('../', import.meta.url);
 export function parseTrending(html) {
@@ -73,9 +74,7 @@ export async function importKnownMetadata(cachePath = fileURLToPath(new URL('.am
 
 export async function refreshPeriod(period) {
   if (!['daily', 'weekly', 'monthly'].includes(period)) throw new Error('GitHub Trending supports daily, weekly, or monthly');
-  const response = await fetch(`https://github.com/trending?since=${period}`, {
-    headers: { 'User-Agent': 'Mozilla/5.0 Amani-Repository-Tracker' }, signal: AbortSignal.timeout(30000),
-  });
+  const response = await checkedFetch(`https://github.com/trending?since=${period}`, { timeoutMs:30000, delayMs:1000, headers:{'User-Agent':'Mozilla/5.0 Amani-Repository-Tracker'}, onRetry: retry => console.warn('Retry source GET:',JSON.stringify(retry)) });
   if (!response.ok) throw new Error(`GitHub Trending ${period}: HTTP ${response.status}`);
   const rows = parseTrending(await response.text());
   if (rows.length < 5) throw new Error(`Incomplete ${period} response (${rows.length} repositories); keeping previous collection`);

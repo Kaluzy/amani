@@ -1,4 +1,4 @@
-import { dataURL, staticMode } from './deployment.js';
+import { dataURL, staticMode, sitePath } from './deployment.js';
 import { savedNames } from './shortlist.js';
 export const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
 export const number = value => value == null ? '—' : Number(value).toLocaleString();
@@ -51,7 +51,7 @@ export function periodTabs(current) { return `<nav class="period-tabs" aria-labe
 export function freshnessNotice(status) {
   const dates = ['daily', 'weekly', 'monthly'].map(period => status.periods?.[period]?.latest).filter(Boolean);
   const stale = dates.some(value => Date.now() - Date.parse(value.includes('T') ? value : value.replace(' ', 'T') + 'Z') > 3 * 3600000);
-  return stale ? '<div class="notice notice-warning freshness-notice" role="status">Some published collections are more than three hours old. Amani shows the last successful observations; scheduled refreshes can be delayed. Check the collection timestamp before relying on a ranking.</div>' : '';
+  return stale ? `<div class="notice notice-warning freshness-notice" role="status">Some published collections are more than three hours old. Amani shows the last successful observations; scheduled refreshes can be delayed. <a href="${sitePath('/status')}" data-nav>Check data status</a> before relying on a ranking.</div>` : '';
 }
 export async function getJSON(url, signal, { timeoutMs = 15000 } = {}) {
   const controller = new AbortController();
@@ -60,7 +60,15 @@ export async function getJSON(url, signal, { timeoutMs = 15000 } = {}) {
   if (signal?.aborted) abort(); else signal?.addEventListener('abort', abort, { once: true });
   const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   try {
-    const response = await fetch(dataURL(url), { signal: controller.signal, ...(staticMode ? { cache: 'no-store' } : {}) });
+    let response;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      controller.signal.throwIfAborted();
+      try { response = await fetch(dataURL(url), { signal: controller.signal, ...(staticMode ? { cache: 'no-store' } : {}) }); }
+      catch (error) { if (attempt || controller.signal.aborted) throw error; }
+      if (response && (![429,500,502,503,504].includes(response.status) || attempt)) break;
+      await response?.body?.cancel();
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
     let data;
     try { data = await response.json(); } catch (error) {
       if (controller.signal.aborted) throw error;

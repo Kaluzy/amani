@@ -9,6 +9,9 @@ shortlist, compare real signals and choose your next building block.
   observed growth, repository profiles, language statistics and topics.
 - Find projects with language/license/star/archived/saved filters and shareable searches.
 - Open Reddit/X discussion searches and subscribe to recorded collections through RSS.
+- Start with three practical decision guides: self-hosting, a first SaaS and local AI.
+- Return to a weekly briefing or save browser-local watchlist check-ins to compare changes.
+- Check source freshness and workflow status; reload never pretends to collect new data.
 - No ads, paid placements or visitor accounts. Optional GA4 is off until an owner
   configures it and a visitor consents; see [integration setup](INTEGRATIONS.md).
 
@@ -82,5 +85,9 @@ Tests use disposable databases and actual Chromium. Coverage includes data
 integrity, source failures, XSS escaping, routes, chart instances, forms, responsive
 card alignment and the static Pages website without a backend. See
 `ARCHITECTURE.md` for the local data contracts.
+
+`npm run qa:performance` checks cold-browser asset budgets and reports lab loading
+metrics; it is not a field-performance guarantee. The five-participant usability
+protocol in [USER-TESTING.md](USER-TESTING.md) still needs actual participants.
 
 GitHub Pages setup follows [GitHub's custom workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).

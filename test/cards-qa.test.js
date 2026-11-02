@@ -110,7 +110,8 @@ test('QA cards and navigation work in the real browser',{timeout:90000},async t=
       assert.ok(await page.$eval('.hero-mark',img=>img.complete&&img.naturalWidth>0));
       assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`hero ${width}px`);
       assert.equal(await page.$eval('.hero-feature strong',el=>el.textContent),varied[0].full_name);
-      assert.equal(await page.$$eval('#mainNav .nav-icon svg',els=>els.length),14);
+      assert.equal(await page.$$eval('#mainNav .nav-icon svg',els=>els.length),17);
+      assert.equal(await page.$$eval('#mainNav > a',els=>els.length),7);
       assert.ok(await page.$eval('.hero-copy',el=>el.scrollWidth<=el.clientWidth+1),`hero copy ${width}px`);
       if(width<700)assert.ok(await page.evaluate(()=>document.querySelector('.hero-mark').getBoundingClientRect().bottom+8<=document.querySelector('.hero-feature').getBoundingClientRect().top),'full supplied wordmark never overlaps feature text');
       assert.ok(await page.$$eval('.metric-value',els=>els.every(el=>el.scrollWidth<=el.clientWidth+1)),`overview exact totals ${width}px`);

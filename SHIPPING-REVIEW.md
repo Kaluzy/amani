@@ -1,5 +1,15 @@
 # Amani release review — 2026-10-29
 
+## Follow-up — 2026-11-02
+
+Adds three original, primary-source-linked decision guides; seven primary nav
+destinations with secondary routes retained; comparison evidence/limitations;
+weekly briefing and browser-local watchlist check-ins; source-health publication
+gates, bounded GET retries, on-demand charts and cold-browser asset-budget QA.
+Analytics explicitly remains off. No email/push service, paid API or hosting change
+was made. Five-person usability protocol is prepared, not falsely reported as run;
+actual user sessions and commercial hosting/rights/privacy gates remain outstanding.
+
 ## Follow-up — 2026-10-30
 
 The supplied gold AMANI logo, neutral/gold glass styling, project finder,

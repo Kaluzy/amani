@@ -53,6 +53,13 @@ subscription, credit purchase or paid job was made in this implementation.
 
 ## Useful public features shipped without new paid services
 
+November 2: `/collections` adds three original decision guides with primary-source
+links, limitations and reversible experiments; `/briefing` combines the latest weekly
+collection with existing RSS. Workbench check-ins compare public catalog values on
+return visits using this browser only. There are no email subscriptions or automatic
+notifications. `/status` exposes source age and operations links. Analytics remains
+off at the owner's request; it will be configured later, not guessed for this release.
+
 `/discover`: real catalog search with language/license/minimum-star filters,
 archived exclusion, saved-only mode, stars/forks/updated sorting, shareable URL,
 and bounded incremental rendering. Missing metadata is not fabricated.

@@ -1,6 +1,8 @@
 import { escapeHTML as e, number, compact, date, relative, language, repoPath, heading, metrics, card, state, periodTabs, getJSON } from './ui.js';
 import { staticMode, repositoryURL, prepareLinks } from './deployment.js';
 import { refreshSaveButtons } from './shortlist.js';
+import { collectionTeasers } from './collections.js';
+import { ensureCharts } from './chart-loader.js';
 
 const titleCase = value => value[0].toUpperCase() + value.slice(1);
 let charts = [];
@@ -41,9 +43,10 @@ export async function repositories(ctx, { period = 'daily', overview = false, to
     yearly: 'Follow long-term progress through the history we have actually recorded.',
     all: 'Every tracked project in one place. Find something worth building with.',
   };
-  const refreshAction = `<span class="updated-label"><span class="status-dot"></span>${e(relative(coverage?.latest))}</span><button id="refreshData" class="button" aria-label="Refresh page data">↻ <span>Refresh</span></button>`;
+  const refreshAction = `<span class="updated-label"><span class="status-dot"></span>${e(relative(coverage?.latest))}</span><button id="refreshData" class="button" aria-label="Reload published data">↻ <span>Reload</span></button>`;
   ctx.main.innerHTML = (overview ? discoveryHero(repos[0], refreshAction) : heading(title, topic ? 'Discover tracked repositories sharing this topic.' : descriptions[period], topic ? 'BROWSE BY TOPIC' : 'EXPLORE OPEN SOURCE', refreshAction))
     + (overview ? metrics(ctx.status.metrics) : '')
+    + (overview ? collectionTeasers() : '')
     + `<div class="section-heading"><div class="section-label"><h2>${topic ? 'Repositories' : period === 'all' ? 'All repositories' : 'Trending repositories'}</h2><span class="count-badge">${repos.length}</span></div>${overview ? '<a class="button button-link" href="/daily" data-nav>View daily trending ↗</a>' : ''}</div>`
     + (!topic && period !== 'all' ? periodTabs(period) : '')
     + (period === 'yearly' ? `<div class="notice">Annual view: ${e(coverage.message)} This is a view of our recorded history, not an official GitHub yearly ranking.</div>` : '')
@@ -109,6 +112,7 @@ export function sortLanguageRows(rows, key = 'repos', direction = 'desc') {
 }
 
 export async function statistics(ctx) {
+  await ensureCharts(ctx.signal);
   const [data, languages] = await Promise.all([getJSON('/api/stats/charts', ctx.signal), getJSON('/api/stats/languages', ctx.signal)]);
   ctx.main.innerHTML = `<section class="statistics-intro">${heading('A clearer perspective.', 'Beyond the noise. A considered look at the projects, languages, and signals in your collection.', 'THE COLLECTION, IN FOCUS')}<div class="statistics-seal"><span aria-hidden="true">↗</span>Observed.<br>Not estimated.</div></section>` + metrics(ctx.status.metrics)
     + '<div class="notice">These totals describe the tracked collection, not all of GitHub. Historical charts use one verified observation per repository per month or year.</div>'
@@ -185,6 +189,7 @@ export async function activity(ctx) {
 }
 
 export async function detail(ctx, owner, name) {
+  await ensureCharts(ctx.signal);
   const repo = await getJSON('/api/repos/detail/' + encodeURIComponent(owner) + '/' + encodeURIComponent(name), ctx.signal);
   document.title = `${repo.full_name} — Amani`;
   const history = repo.star_history;
@@ -240,5 +245,6 @@ export function information(ctx, page) {
     content[2]=content[2].replace('or advertising/analytics scripts','or advertising scripts').replace('This application does not include advertising or third-party analytics scripts.','This application does not include advertising.').replace('There are no tracking cookies or paid placements in this release.','There are no advertising cookies or paid placements.');
     content[2]+='<h2>Optional visitor analytics</h2><p>The site includes an optional Google Analytics 4 integration. It remains off unless the operator configures a measurement ID and you explicitly allow analytics. Declining does not limit any tools. Use “Analytics settings” in the footer to inspect or change your choice. Do Not Track and Global Privacy Control signals keep analytics off.</p><p>If enabled with your consent, Google may receive page paths, device/network information and tool-interaction events, and may set analytics cookies. We do not send search terms, filter values, shared comparison parameters or saved-project lists. Advertising features are disabled. Cookies are scoped to this application and configured to expire after 30 days. Consent choices are stored in this browser; storage failures may require choosing again.</p><p>Analytics is not a condition of browsing. No visitor-traffic dashboard is publicly exposed. Repository statistics describe tracked projects, not visitor traffic.</p>';
   }
+  if (page === 'privacy') content[2] += '<h2>Local watchlist check-ins</h2><p>If you save a workbench check-in, this browser stores selected public project names, recorded star/fork totals, archive flags and your check-in time. These baselines are not sent to our servers. Clear check-in history in the workbench, unsave a project, or clear site storage to remove them. No background monitoring, email or push notification is enabled.</p>';
   ctx.main.innerHTML = `<article class="prose">${heading(content[0], content[1], page.toUpperCase())}${content[2]}</article>`;
 }

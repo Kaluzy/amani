@@ -6,6 +6,9 @@ import { createApp } from './serve-api.js';
 import db from '../src/lib/database.js';
 import { exportPublicSeed } from '../src/lib/public-data.js';
 import { createHash } from 'node:crypto';
+import { guides } from '../public/editorial.js';
+import { assertSourceHealth } from './source-health.js';
+import { decisionGuideHTML, collectionsIndexHTML } from '../public/collections.js';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const output=path.resolve(process.env.PAGES_OUTPUT || path.join(root,'dist'));
@@ -16,7 +19,7 @@ if(new URL(siteOrigin).origin !== siteOrigin || !siteOrigin.startsWith('https://
 const repository=process.env.PAGES_REPOSITORY || 'Kaluzy/amani';
 if(!/^[A-Za-z0-9_-]+\/[A-Za-z0-9_.-]+$/.test(repository)) throw new Error('Invalid Pages repository');
 const save=async(file,body)=>{const dest=path.join(output,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body);};
-const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','discovery.js','analytics.js','design.css','cards.css','premium.css'];
+const assets=['client.js','pages.js','ui.js','deployment.js','shortlist.js','workbench.js','guide.js','discovery.js','analytics.js','editorial.js','collections.js','watchlist.js','briefing.js','reliability.js','chart-loader.js','design.css','cards.css','premium.css'];
 const binaryAssets=['brand-logo.png'];
 const sources=new Map(await Promise.all(assets.map(async asset=>[asset,await readFile(path.join(root,'public',asset),'utf8')])));
 const revision=(process.env.GITHUB_SHA || createHash('sha256').update([...sources.values()].join('\n')+await readFile(path.join(root,'package-lock.json'),'utf8')).update(await readFile(path.join(root,'public/brand-logo.png'))).digest('hex')).slice(0,12);
@@ -27,7 +30,8 @@ const origin=`http://127.0.0.1:${server.address().port}`;
 try{
   const get=async(endpoint)=>{const response=await fetch(origin+endpoint);if(!response.ok)throw new Error(`${endpoint}: ${response.status}`);return response.json();};
   const repos=await get('/api/repos');const topics=await get('/api/topics');
-  const routes=['/','/daily','/weekly','/monthly','/yearly','/stats','/insights','/live','/topics','/github-trending','/workbench','/guide','/discover','/community','/submit','/about','/privacy','/terms','/contact',...repos.map(r=>'/repositories/'+r.full_name),...topics.map(t=>'/topics/'+encodeURIComponent(t.slug))];
+  console.log('Source health:',JSON.stringify(assertSourceHealth(await get('/api/status'))));
+  const routes=['/','/daily','/weekly','/monthly','/yearly','/stats','/insights','/live','/topics','/github-trending','/workbench','/guide','/discover','/community','/collections','/briefing','/status',...guides.map(guide=>'/collections/'+guide.slug),'/submit','/about','/privacy','/terms','/contact',...repos.map(r=>'/repositories/'+r.full_name),...topics.map(t=>'/topics/'+encodeURIComponent(t.slug))];
   let shell=await readFile(path.join(root,'public/shell.html'),'utf8');
   shell=shell.replace('<head>',`<head>\n  <meta name="amani-base" content="${base}">\n  <meta name="amani-hosting" content="github-pages">\n  <meta name="amani-repository" content="https://github.com/${repository}">`)
     .replace(/(href|src)="\/(?!\/)/g,`$1="${base}/`)
@@ -39,11 +43,16 @@ try{
   const repoMap=new Map(repos.map(repo=>['/repositories/'+repo.full_name,repo]));
   for(const route of routes){
     const repo=repoMap.get(route);
-    const title=(titles[route] || ({'/discover':'Find your next open-source tool','/community':'Community discovery'})[route] || (repo ? repo.full_name : 'Topic: '+decodeURIComponent(route.slice('/topics/'.length))))+' — Amani';
-    const description=repo ? `Explore ${repo.full_name} on Amani. Compare public project signals, inspect the source, and save it to your workbench.` : 'Discover open-source projects, compare the evidence, and choose your next building block with Amani’s independent field guide.';
+    const guide=guides.find(item=>route==='/collections/'+item.slug);
+    const title=(titles[route] || ({'/discover':'Find your next open-source tool','/community':'Community discovery','/collections':'Practical decision guides','/briefing':'Weekly open-source briefing','/status':'Source freshness and reliability'})[route] || guide?.title || (repo ? repo.full_name : 'Topic: '+decodeURIComponent(route.slice('/topics/'.length))))+' — Amani';
+    const description=guide?.description || (repo ? `Explore ${repo.full_name} on Amani. Compare public project signals, inspect the source, and save it to your workbench.` : 'Discover open-source projects, compare the evidence, and choose your next building block with Amani’s independent field guide.');
     const canonical=siteOrigin+base+(route==='/'?'/':route+'/');
-    const page=shell.replace(/<title>.*?<\/title>/,`<title>${escape(title)}</title>`).replace(/<meta name="description" content="[^"]*">/,`<meta name="description" content="${escape(description)}">`)
+    let page=shell.replace(/<title>.*?<\/title>/,`<title>${escape(title)}</title>`).replace(/<meta name="description" content="[^"]*">/,`<meta name="description" content="${escape(description)}">`)
       .replace('</head>',`  <link rel="canonical" href="${escape(canonical)}">\n  <meta property="og:title" content="${escape(title)}">\n  <meta property="og:description" content="${escape(description)}">\n  <meta property="og:type" content="website">\n  <meta property="og:url" content="${escape(canonical)}">\n  ${route==='/workbench'?'<meta name="robots" content="noindex,follow">':''}\n</head>`);
+    if (guide || route === '/collections') {
+      const content = (guide ? decisionGuideHTML(guide, repos) : collectionsIndexHTML()).replace(/href="\/(?!\/)/g, `href="${base}/`);
+      page = page.replace(/(<main\b[^>]*>)[\s\S]*?(<\/main>)/, (_, open, close) => open + content + close);
+    }
     await save(route==='/'?'index.html':path.join(decodeURIComponent(route.slice(1)),'index.html'),page);
   }
   await save('404.html',shell.replace('</head>','<meta name="robots" content="noindex,follow"></head>'));await save('.nojekyll','');
