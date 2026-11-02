@@ -80,6 +80,7 @@ test('decision journeys, watchlist and lazy charts work in the real browser', {t
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`${route} ${width}px`);
         assert.equal(await page.$$eval('.error-state',els=>els.length),0);
         if(route==='/status'&&width<600)assert.ok(await page.$$eval('.status-table td',els=>els.every(el=>el.getBoundingClientRect().right<=innerWidth&&el.getBoundingClientRect().left>=0)),'Every freshness fact is visible without sideways scrolling');
+        if(route==='/status'&&width<600)assert.ok(await page.$eval('.status-table caption',el=>el.scrollWidth<=el.clientWidth+1),'Freshness explanation wraps without clipping');
       }
     }
     await page.goto(origin+'/collections/first-saas',{waitUntil:'networkidle0'});

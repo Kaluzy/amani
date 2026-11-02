@@ -236,7 +236,7 @@ th[aria-sort],.sort-arrow { color:#8b6b30; }
 @media(max-width:600px) { .decision-facts { grid-template-columns:1fr; }.collection-section .section-heading { flex-wrap:wrap; gap:16px; }.guide-actions .button { white-space:normal; } }
 @media(max-width:600px) {
   .status-table { display:block; min-width:0; width:100%; }
-  .status-table caption { display:block; width:100%; line-height:1.7; }
+  .status-table caption { display:block; width:100%; line-height:1.7; white-space:normal; }
   .status-table thead { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
   .status-table tbody { display:grid; gap:14px; }
   .status-table tr { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border:1px solid var(--line); border-radius:16px; padding:14px; }
