@@ -21,7 +21,7 @@
     "qa:full": "node scripts/qa-check.js --full"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^13.2.0",
     "chart.js": "^4.4.3",
     "cheerio": "^1.0.0",
     "express": "^4.19.2",
